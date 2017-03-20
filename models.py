@@ -75,3 +75,6 @@ class CellInfo2G(BaseModel):
     class Meta:
         db_table = 'cell_info_2G'
 
+def multi_insert(table, namelist):
+    for name in namelist:
+        database.execute_qal('INSERT INTO %s VALUE (%s)', (table, name))
