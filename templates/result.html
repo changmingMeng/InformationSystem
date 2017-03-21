@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Information System</title>
+        <script type="text/javascript" src="../static/js/post.js"></script>
+        <script type="text/javascript" src="../static/js/jquery-3.2.0.js"></script>
+        <link rel="stylesheet" href="../static/css/semantic.css" media="screen" title="no title" charset="utf-8">
+        <link rel="stylesheet" href="../static/css/jedate/skin/jedate.css" media="screen" title="no title" charset="utf-8">
+    </head>
+    <body>
+        <div class="ui fixed inverted menu">
+            <a href="manage" class="item">小区查询</a>
+            <a href="select" class="item">区域查询</a>
+            <a href="#" class="item">Other</a>
+        </div>
+        <div class="ui vertical basic segment">
+            <div class="ui image">
+                <img src="../static/images/banner.jpg" alt="" />
+            </div>
+        </div>
+
+        <div id="search" class="ui vertical basic segment">
+            <div class="ui grid">
+
+                <div class="five wide clumn">
+
+                </div>
+
+                <div class="six wide column">
+                    <h2 class="ui header">
+                        <i class="icon star"></i>
+                        输入小区名称
+                    </h2>
+
+                    <div class="ui form">
+                      <div class="three fields">
+                        <div class="field">
+                          <label>小区名称</label>
+                          <input id="cellname" type="text" placeholder="小区">
+                        </div>
+
+                        <div class="field">
+                          <label>小区分类</label>
+                          <select id="celltype" class="ui dropdown">
+                            <option value=""></option>
+                            <option value="2g">GSM</option>
+                            <option value="3g">WCDMA</option>
+                            <option value="4g">LTE</option>
+                          </select>
+                        </div>
+
+                        <div class="field">
+                          <label>日期</label>
+                          <input id="date" type="text" placeholder="日期">
+                        </div>
+                      </div>
+
+                      <button class="ui animated fade button" id="querybutton" >
+                        <div class="visible content">查询</div>
+                        <div class="hidden content">
+                          <i class="search icon"></i>
+                        </div>
+                      </button>
+
+                    </div>
+
+                    <div class="five wide clumn">
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <table id="table" class="ui celled table">
+          <thead>
+            <tr>
+              <th>小区名</th>
+              <th>日期</th>
+              <th>话务量(erl)</th>
+              <th>上行流量(M)</th>
+              <th>下行流量(M)</th>
+              <th>总流量(M)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="tablecellname">Cell</td>
+              <td id="tabledate">Cell</td>
+              <td id="tableerl">Cell</td>
+              <td id="tableupdata">Cell</td>
+              <td id="tabledowndata">Cell</td>
+              <td id="tablealldata">Cell</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="6">
+                <div class="ui right floated pagination menu">
+                  <a class="icon item">
+                    <i class="left chevron icon"></i>
+                  </a>
+                  <a class="item">1</a>
+                  <a class="item">2</a>
+                  <a class="item">3</a>
+                  <a class="item">4</a>
+                  <a class="icon item">
+                    <i class="right chevron icon"></i>
+                  </a>
+                </div>
+                <button class="ui button" id="backbutton" >返回</button>
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+
+
+        <div class="ui vertical very padded inverted segment">
+            <div class="ui grid">
+                <div class="four wide column">
+                    <div class="ui vertical inverted text menu">
+                        <div class="item">
+                            <h3 class="ui inverted header">网优中心</h3>
+                        </div>
+
+                        <div class="item">
+                            地址 : 1号楼201
+                        </div>
+
+                        <div class="item">
+                            Tel : 010-66666
+                        </div>
+
+                        <div class="item">
+                            Fax : 010-66666
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    <script type="text/javascript">
+    $(document).ready(function(){
+      $("table").hide()
+
+      $("#querybutton").click(function(){
+        $.post("select",
+        {
+          name:$("#cellname").val(),
+          type:$("#celltype").val(),
+          date:$("#date").val()
+        },
+        function(data,status){
+          a = data.split(",")
+
+          $("#tablecellname").text(a[0])
+          $("#tabledate").text(a[1])
+          $("#tableerl").text(a[2])
+          $("#tableupdata").text(a[3])
+          $("#tabledowndata").text(a[4])
+          $("#tablealldata").text(a[5])
+
+          $("#search").hide()
+          $("#table").show()
+        });
+      });
+
+      $("#backbutton").click(function(){
+        $("#search").show()
+        $("#table").hide()
+      });
+    });
+    // $.ajaxSetup({
+    //         async : false
+    //     });
+    // </script>
+    </body>
+</html>
