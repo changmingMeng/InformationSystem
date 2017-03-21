@@ -38,7 +38,7 @@ class ManageHandler(tornado.web.RequestHandler):
   """处理管理界面的请求"""
   def get(self):
     print "running ManageHandler get()"
-    self.render('manage.html')
+    self.render('result.html')
 
 class InsertHandler(tornado.web.RequestHandler):
   """向数据库存储信息"""
@@ -63,24 +63,37 @@ class SelectHandler(tornado.web.RequestHandler):
         self.render("select.html", error='')
 
     def post(self):
-        try:
-            selectname = self.get_argument('name')
-            t = CellBusi3G.select().where(CellBusi3G.name == selectname).first()
-            if t is not None:
-                name, date, erl, updata, downdata, alldata = t.name.name, t.date, t.erl, t.updata, t.downdata, t.alldata
-                print name
-                self.render("selectResult.html",
-                    name=name,
-                    date=date,
-                    updata=updata,
-                    downdata=downdata,
-                    alldata=alldata,
-                    erl=erl )
-            else:
-                self.render("select.html", error='请输入正确的小区名称')
-        except:
-            pass
+        print "select.post"
 
+        selectname = self.get_argument('name')
+        print selectname
+        t = CellBusi3G.select().where(CellBusi3G.name == selectname).first()
+        if t is not None:
+            name, date, erl, updata, downdata, alldata = t.name.name, t.date, t.erl, t.updata, t.downdata, t.alldata
+            print name
+            # self.render("selectResult.html",
+            #          name=name,
+            #          date=date,
+            #          updata=updata,
+            #          downdata=downdata,
+            #          alldata=alldata,
+            #          erl=erl )
+            self.render("sql.html",
+                     name=name,
+                     date=date,
+                     updata=round(updata),
+                     downdata=round(downdata),
+                     alldata=round(alldata),
+                     erl=round(erl) )
+        else:
+            self.render("select.html", error='请输入正确的小区名称')
+
+
+
+class UploadHandler(tornado.web.RequestHandler):
+
+
+    def post(self):
         upload_path = os.path.join(os.path.dirname(__file__), 'files')  # 文件的暂存路径
         file_metas = self.request.files['file']  # 提取表单中‘name’为‘file’的文件元数据
         for meta in file_metas:
@@ -88,7 +101,7 @@ class SelectHandler(tornado.web.RequestHandler):
             filepath = os.path.join(upload_path, filename)
             with open(filepath, 'wb') as up:  # 有些文件需要已二进制的形式存储，实际中可以更改
                 up.write(meta['body'])
-                self.render("selectResult.html",)
+
 
 
 def make_app():
@@ -96,6 +109,7 @@ def make_app():
                                     (r'/login', LoginHandler),
                                     (r'/manage', ManageHandler),
                                     (r'/select', SelectHandler),
+                                    (r'/upload', UploadHandler),
                                     (r'/insert',InsertHandler)],
       cookie_secret='jf0239u0fr9n',
       template_path=os.path.join(os.path.dirname(__file__), "templates"),
