@@ -4,9 +4,14 @@
         <meta charset="utf-8">
         <title>Information System</title>
         <script type="text/javascript" src="../static/js/post.js"></script>
+        <!-- <script type="text/javascript" src="../static/js/jquery.datetimepicker.js"></script> -->
         <script type="text/javascript" src="../static/js/jquery-3.2.0.js"></script>
-        <link rel="stylesheet" href="../static/css/semantic.css" media="screen" title="no title" charset="utf-8">
-        <link rel="stylesheet" href="../static/css/jedate/skin/jedate.css" media="screen" title="no title" charset="utf-8">
+        <!-- <script type="text/javascript" src="../static/js/jquery.js"></script> -->
+        <!-- <script type="text/javascript" src="../static/js/jedate.js"></script> -->
+        <script type="text/javascript" src="../static/js/jquery.datetimepicker.full.js"></script>
+        <link rel="stylesheet" type="text/css" href="../static/css/jquery.datetimepicker.css"/ >
+        <link rel="stylesheet" type="text/css" href="../static/css/semantic.css" media="screen" title="no title" charset="utf-8">
+        <!-- <link rel="stylesheet" href="../static/css/jedate/skin/gray.css" id="jeDateSkin" media="screen" title="no title" charset="utf-8"> -->
     </head>
     <body>
         <div class="ui fixed inverted menu">
@@ -52,7 +57,12 @@
 
                         <div class="field">
                           <label>日期</label>
-                          <input id="date" type="text" placeholder="日期">
+
+
+                              <!-- <input type="text" placeholder="Date/Time"> -->
+                          <!-- <input id="date" type="text" placeholder="选择日期" value=""  readonly> -->
+                          <input type="text" value="" id="date" placeholder="选择日期"/>
+
                         </div>
                       </div>
 
@@ -62,7 +72,7 @@
                           <i class="search icon"></i>
                         </div>
                       </button>
-
+                      <label class="" id="errorinfo"></label>
                     </div>
 
                     <div class="five wide clumn">
@@ -85,32 +95,32 @@
               <th>总流量(M)</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
+          <tbody id="table_body">
+            <!-- <tr id="tr_anchor">
               <td id="tablecellname">Cell</td>
               <td id="tabledate">Cell</td>
               <td id="tableerl">Cell</td>
               <td id="tableupdata">Cell</td>
               <td id="tabledowndata">Cell</td>
               <td id="tablealldata">Cell</td>
-            </tr>
+            </tr> -->
           </tbody>
-          <tfoot>
+          <tfoot id="table_foot">
             <tr>
               <th colspan="6">
-                <div class="ui right floated pagination menu">
-                  <a class="icon item">
+                <div id="foot_pages" class="ui right floated pagination menu">
+                  <a class="icon item" onclick="page_click('pre')" id="pre_button">
                     <i class="left chevron icon"></i>
                   </a>
-                  <a class="item">1</a>
+                  <!-- <a class="item">1</a>
                   <a class="item">2</a>
                   <a class="item">3</a>
-                  <a class="item">4</a>
-                  <a class="icon item">
+                  <a class="item">4</a> -->
+                  <a class="icon item" onclick="page_click('next')" id="next_button">
                     <i class="right chevron icon"></i>
                   </a>
                 </div>
-                <button class="ui button" id="backbutton" >返回</button>
+                <button class="ui button" id="backbutton" >返回</button
               </th>
             </tr>
           </tfoot>
@@ -146,36 +156,116 @@
     $(document).ready(function(){
       $("table").hide()
 
+
       $("#querybutton").click(function(){
-        $.post("select",
-        {
-          name:$("#cellname").val(),
-          type:$("#celltype").val(),
-          date:$("#date").val()
-        },
-        function(data,status){
-          a = data.split(",")
+        $.getJSON("select",
+          {
+            name:$("#cellname").val(),
+            type:$("#celltype").val(),
+            date:$("#date").val()
+          },
+          function(json){
+            $("#table_body").empty()
+            $("#foot_pages").empty()
 
-          $("#tablecellname").text(a[0])
-          $("#tabledate").text(a[1])
-          $("#tableerl").text(a[2])
-          $("#tableupdata").text(a[3])
-          $("#tabledowndata").text(a[4])
-          $("#tablealldata").text(a[5])
 
-          $("#search").hide()
-          $("#table").show()
-        });
+            var data = eval(json);
+            if ($.isEmptyObject(data))
+              $("#errorinfo").text("请输入正确的小区名称");
+            else{
+              $("#errorinfo").text("");
+              page_number = 0;
+
+              var pre = "'pre'"
+              var next = "'next'"
+              var pre_button = '<a class="icon item" onclick="page_click('+pre+')" id="pre_button"><i class="left chevron icon"></i></a>'
+              var next_button = '<a class="icon item" onclick="page_click('+next+')" id="next_button"><i class="right chevron icon"></i></a>'
+              $("#foot_pages").append(pre_button,next_button)
+
+              for(var i in data){
+                var td_name = $("<td></td>").text(data[i].name)
+                var td_date = $("<td></td>").text(data[i].date)
+                var td_erl = $("<td></td>").text(data[i].erl)
+                var td_updata = $("<td></td>").text(data[i].updata)
+                var td_downdata = $("<td></td>").text(data[i].downdata)
+                var td_alldata = $("<td></td>").text(data[i].alldata)
+                //var tr = "<tr id='row"+i+"></tr>"
+                var tr = $("<tr></tr>").addClass("row"+i)
+                tr.append(td_name,td_date,td_erl,td_updata,td_downdata,td_alldata)
+                $("#table_body").append(tr)
+                //alert(o)
+
+                if (i%10 == 0){
+                  page_number++;
+                  //var page = '<a id="page_button" class="item" onclick="page_click('+page_number+')">'+(page_number)+'<a>'
+                  var page = $('<a id="page_button" class="item" onclick="page_click('+page_number+')">'+(page_number)+'<a>')
+                  $("#next_button").before(page)
+                }
+              }
+
+              //用一个隐藏的div来保存当前的page索引，初始值是1
+              var page_index = $("<div></div>").text(1).addClass("count").hide();
+              $("#foot_pages").append(page_index)
+
+              page_click(1)
+              $("#search").hide()
+              $("#table").show()
+            }
+
+            //alert(json)
+          })
       });
 
       $("#backbutton").click(function(){
         $("#search").show()
         $("#table").hide()
       });
+
     });
-    // $.ajaxSetup({
-    //         async : false
-    //     });
-    // </script>
-    </body>
+
+
+
+    $.datetimepicker.setLocale('ch');
+    $('#date').datetimepicker({
+      dayOfWeekStart : 1,
+      format:"Y-m-d",
+      timepicker:false
+      //lang:'ch',
+      //disabledDates:['1986/01/08','1986/01/09','1986/01/10'],
+      //startDate:	'/01/05'
+    });
+
+    function page_click(buttonId){
+      var current_page = $(".count").text();
+      alert(buttonId, current_page)
+      if(buttonId == "pre"){
+          if(current_page > 1){
+            var page = current_page -1;
+            $(".count").text(page);
+            page_click_implement(page);
+          }
+      }
+      else if (buttonId == "next") {
+          if(current_page < $("#foot_pages").children(".item").length){
+            var page = current_page + 1;
+            $(".count").text(page);
+            page_click_implement(page);
+          }
+      }
+      else {
+        $(".count").text(buttonId);
+        page_click_implement(buttonId)
+      }
+    }
+
+    function page_click_implement(buttonId){
+      $("tbody").children().hide();
+      var len = $("tbody").children().length;
+      for(var i = (buttonId-1)*10; i < len && i < buttonId*10; i++){
+        $("tbody").children().eq(i).show();
+      }
+    }
+
+    </script>
+  </body>
 </html>

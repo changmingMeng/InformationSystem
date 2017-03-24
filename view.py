@@ -4,6 +4,8 @@
 import os.path
 import tornado.ioloop
 import tornado.web
+import tornado.escape
+
 from models import *
 
 
@@ -55,18 +57,48 @@ class InsertHandler(tornado.web.RequestHandler):
     ctl.insert(province+city+carnum, descript, "E:/picture/")
     self.redirect('/manage')
 
-class SelectHandler(tornado.web.RequestHandler):
-    """从数据库取信息"""
 
+
+class SelectHandler(tornado.web.RequestHandler):
+    """从数据库选择数据"""
 
     def get(self):
-        self.render("select.html", error='')
+        print "select.get"
+
+        selectname = self.get_argument('name')
+        print selectname
+        nettype = self.get_argument('type')
+        print nettype
+        date = self.get_argument('date')
+        print date
+
+        likename = '%'+selectname+'%'
+        print likename
+        sql = CellBusi3G.select().where(CellBusi3G.name % likename).limit(50)
+
+        response = "["
+        if sql is not None:
+            #response += "{'state':%s},"%(0,)
+            for t in sql:
+                name, date, erl, updata, downdata, alldata \
+                = \
+                t.name.name, t.date, t.erl, t.updata, t.downdata, t.alldata
+                response+="{'name':'%s','date':'%s','erl':%s, 'updata':%s, 'downdata':%s, 'alldata':%s}," % \
+                     (name, date, round(erl, 3), round(updata), round(downdata), round(alldata))
+        response+="]"
+        print response
+        response_json = tornado.escape.json_encode(response)
+        self.write(response_json)
 
     def post(self):
         print "select.post"
 
         selectname = self.get_argument('name')
         print selectname
+        nettype = self.get_argument('type')
+        print nettype
+        date = self.get_argument('date')
+        print date
         t = CellBusi3G.select().where(CellBusi3G.name == selectname).first()
         if t is not None:
             name, date, erl, updata, downdata, alldata = t.name.name, t.date, t.erl, t.updata, t.downdata, t.alldata
@@ -78,15 +110,18 @@ class SelectHandler(tornado.web.RequestHandler):
             #          downdata=downdata,
             #          alldata=alldata,
             #          erl=erl )
-            self.render("sql.html",
-                     name=name,
-                     date=date,
-                     updata=round(updata),
-                     downdata=round(downdata),
-                     alldata=round(alldata),
-                     erl=round(erl) )
+            self.write("%s,%s,%s,%s,%s,%s,%s,"%(0, name, date, round(erl), round(updata), round(downdata), round(alldata)))
+            # self.render("sql.html",
+            #          statue="0",
+            #          name=name,
+            #          date=date,
+            #          updata=round(updata),
+            #          downdata=round(downdata),
+            #          alldata=round(alldata),
+            #          erl=round(erl) )
         else:
-            self.render("select.html", error='请输入正确的小区名称')
+            #self.render("select.html", error='请输入正确的小区名称')
+            self.write("1")
 
 
 
@@ -105,7 +140,7 @@ class UploadHandler(tornado.web.RequestHandler):
 
 
 def make_app():
-    return tornado.web.Application([(r'/', MainHandler),
+    return tornado.web.Application([(r'/', ManageHandler),
                                     (r'/login', LoginHandler),
                                     (r'/manage', ManageHandler),
                                     (r'/select', SelectHandler),
@@ -120,5 +155,5 @@ def make_app():
 
 if __name__ == "__main__":
   app = make_app()
-  app.listen(8080)
+  app.listen(8000)
   tornado.ioloop.IOLoop.current().start()
