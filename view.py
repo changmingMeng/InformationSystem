@@ -74,7 +74,8 @@ class SelectHandler(tornado.web.RequestHandler):
 
         likename = '%'+selectname+'%'
         print likename
-        sql = CellBusi3G.select().where(CellBusi3G.name % likename).limit(50)
+        where_condition = "CellBusi3G.name % likename"
+        sql = CellBusi3G.select().where(where_condition).limit(50)
 
         response = "["
         if sql is not None:
@@ -84,7 +85,7 @@ class SelectHandler(tornado.web.RequestHandler):
                 = \
                 t.name.name, t.date, t.erl, t.updata, t.downdata, t.alldata
                 response+="{'name':'%s','date':'%s','erl':%s, 'updata':%s, 'downdata':%s, 'alldata':%s}," % \
-                     (name, date, round(erl, 3), round(updata), round(downdata), round(alldata))
+                     (name, date, round(erl, 3), round(updata/1024, 2), round(downdata/1024, 2), round(alldata/1024, 2))
         response+="]"
         print response
         response_json = tornado.escape.json_encode(response)
@@ -110,7 +111,7 @@ class SelectHandler(tornado.web.RequestHandler):
             #          downdata=downdata,
             #          alldata=alldata,
             #          erl=erl )
-            self.write("%s,%s,%s,%s,%s,%s,%s,"%(0, name, date, round(erl), round(updata), round(downdata), round(alldata)))
+            self.write("%s,%s,%s,%s,%s,%s,%s,"%(0, name, date, round(erl), round(updata/1024, 2), round(downdata/1024, 2), round(alldata/1024, 2)))
             # self.render("sql.html",
             #          statue="0",
             #          name=name,
