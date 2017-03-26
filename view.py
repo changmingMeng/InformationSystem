@@ -74,8 +74,7 @@ class SelectHandler(tornado.web.RequestHandler):
 
         likename = '%'+selectname+'%'
         print likename
-        where_condition = "CellBusi3G.name % likename"
-        sql = CellBusi3G.select().where(where_condition).limit(50)
+        sql = CellBusi3G.select().where(CellBusi3G.name % likename).limit(50)
 
         response = "["
         if sql is not None:
