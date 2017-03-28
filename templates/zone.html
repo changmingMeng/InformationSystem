@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Information System: zone query</title>
+    <script type="text/javascript" src="../static/js/jquery-3.2.0.js"></script>
+    <script type="text/javascript" src="../static/js/jquery.datetimepicker.full.js"></script>
+    <script type="text/javascript" src="../static/JSAjaxFileUploader-master/JQuery.JSAjaxFileUploader.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/css/jquery.datetimepicker.css"/ >
+    <link rel="stylesheet" type="text/css" href="../static/css/semantic.css" media="screen" title="no title" charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="../static/JSAjaxFileUploader-master/JQuery.JSAjaxFileUploader.css"  />
+  </head>
+  <body>
+    <div class="ui fixed inverted menu">
+        <a href="manage" class="item">小区查询</a>
+        <a href="zone" class="item">区域查询</a>
+        <a href="#" class="item">Other</a>
+    </div>
+    <div class="ui vertical basic segment">
+        <div class="ui image">
+            <img src="../static/images/banner.jpg" alt="" />
+        </div>
+    </div>
+
+
+    <div id="search" class="ui vertical basic segment">
+      <div class="ui grid">
+
+        <div class="three wide clumn"></div>
+
+        <div class="ten wide column">
+          <h2 class="ui header">
+            <i class="icon star"></i>
+            区域查询
+          </h2>
+
+          <div class="ui form">
+            <div class="four fields">
+
+              <div class="two field">
+                <label>小区名称</label>
+                <div class="ui action input">
+                  <input type="text" id="_attachmentName">
+                  <label for="attachmentName" class="ui icon button btn-file">
+                    <i class="file icon"></i>
+                    <input type="file" id="attachmentName" name="attachmentName" style="display:none">
+                  </label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>起始日期</label>
+                <input type="text" value="" id="begin_date" placeholder="选择日期"/>
+              </div>
+
+              <div class="field">
+                <label>结束日期</label>
+                <input type="text" value="" id="end_date" placeholder="选择日期"/>
+              </div>
+
+            </div>
+            <input class="ui button" type="button" onclick="UploadFile();" value="提交" />
+          </div>
+
+        </div>
+
+        <div class="three wide clumn"></div>
+
+      </div>
+    </div>
+
+    <div class="ui vertical very padded inverted segment">
+        <div class="ui grid">
+            <div class="four wide column">
+                <div class="ui vertical inverted text menu">
+                    <div class="item">
+                        <h3 class="ui inverted header">网优中心</h3>
+                    </div>
+
+                    <div class="item">
+                        地址 : 1号楼201
+                    </div>
+
+                    <div class="item">
+                        Tel : 010-66666
+                    </div>
+
+                    <div class="item">
+                        Fax : 010-66666
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  <script type="text/javascript">
+    //$('#target-div1').JSAjaxFileUploader({uploadUrl:'upload'});
+
+    $.datetimepicker.setLocale('ch');
+    $('#begin_date').datetimepicker({
+      dayOfWeekStart : 1,
+      format:"Y-m-d",
+      timepicker:false
+      //lang:'ch',
+      //disabledDates:['1986/01/08','1986/01/09','1986/01/10'],
+      //startDate:	'/01/05'
+    });
+
+    $.datetimepicker.setLocale('ch');
+    $('#end_date').datetimepicker({
+      dayOfWeekStart : 1,
+      format:"Y-m-d",
+      timepicker:false
+      //lang:'ch',
+      //disabledDates:['1986/01/08','1986/01/09','1986/01/10'],
+      //startDate:	'/01/05'
+    });
+
+    function UploadFile(){
+      //获取文件对象
+      var fileObj = document.getElementById("attachmentName").files[0];
+      //创建form对象
+      var form = new FormData();
+      form.append("k1", "v1");  //为后台发送数据
+      form.append("file", fileObj);
+      var xhr = new XMLHttpRequest();
+      xhr.open("post", 'upload', true);
+      xhr.send(form); //发送form表单
+    }
+
+    var fileExtentionRange = '.zip .rar .tar .pdf .doc .docx .xls .xlsx .ppt .pptx';
+        var MAX_SIZE = 30; // MB
+
+        $(document).on('change', '.btn-file :file', function() {
+            var input = $(this);
+
+            if (navigator.appVersion.indexOf("MSIE") != -1) { // IE
+                var label = input.val();
+
+                input.trigger('fileselect', [ 1, label, 0 ]);
+            } else {
+                var label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+                var numFiles = input.get(0).files ? input.get(0).files.length : 1;
+                var size = input.get(0).files[0].size;
+
+                input.trigger('fileselect', [ numFiles, label, size ]);
+            }
+        });
+
+        $('.btn-file :file').on('fileselect', function(event, numFiles, label, size) {
+            $('#attachmentName').attr('name', 'attachmentName'); // allow upload.
+
+            var postfix = label.substr(label.lastIndexOf('.'));
+            if (fileExtentionRange.indexOf(postfix.toLowerCase()) > -1) {
+                if (size > 1024 * 1024 * MAX_SIZE ) {
+                	alert('max size：<strong>' + MAX_SIZE + '</strong> MB.');
+
+                    $('#attachmentName').removeAttr('name'); // cancel upload file.
+                } else {
+                    $('#_attachmentName').val(label);
+                }
+            } else {
+                alert('file type：<br/> <strong>' + fileExtentionRange + '</strong>');
+
+                $('#attachmentName').removeAttr('name'); // cancel upload file.
+            }
+        });
+  </script>
+  </body>
+</html>
