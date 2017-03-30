@@ -7,7 +7,7 @@ import tornado.web
 import tornado.escape
 
 from models import *
-
+import control
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -103,39 +103,66 @@ class SelectHandler(tornado.web.RequestHandler):
         if t is not None:
             name, date, erl, updata, downdata, alldata = t.name.name, t.date, t.erl, t.updata, t.downdata, t.alldata
             print name
-            # self.render("selectResult.html",
-            #          name=name,
-            #          date=date,
-            #          updata=updata,
-            #          downdata=downdata,
-            #          alldata=alldata,
-            #          erl=erl )
+
             self.write("%s,%s,%s,%s,%s,%s,%s,"%(0, name, date, round(erl), round(updata/1024, 2), round(downdata/1024, 2), round(alldata/1024, 2)))
-            # self.render("sql.html",
-            #          statue="0",
-            #          name=name,
-            #          date=date,
-            #          updata=round(updata),
-            #          downdata=round(downdata),
-            #          alldata=round(alldata),
-            #          erl=round(erl) )
+
         else:
             #self.render("select.html", error='请输入正确的小区名称')
             self.write("1")
 
 
+class ZoneHandler(tornado.web.RequestHandler):
+
+
+    def get(self):
+        print("ZoneHandler.get")
+        self.render("zone.html")
 
 class UploadHandler(tornado.web.RequestHandler):
 
 
+    def prepare(self):
+        self.filepath = ""
+
+    def get(self):
+        print("uploadhandler.get")
+        if self.filepath == "":
+            pass
+        else:
+            begindate = self.get_argument("begin_date")
+            enddate = self.get_argument("end_date")
+
     def post(self):
+        print("uploadhandler.post")
+
+        begindate = self.get_argument("begin_date")
+        enddate = self.get_argument("end_date")
+        print begindate, enddate
+
+
         upload_path = os.path.join(os.path.dirname(__file__), 'files')  # 文件的暂存路径
         file_metas = self.request.files['file']  # 提取表单中‘name’为‘file’的文件元数据
         for meta in file_metas:
             filename = meta['filename']
             filepath = os.path.join(upload_path, filename)
+            self.filepath = filepath
             with open(filepath, 'wb') as up:  # 有些文件需要已二进制的形式存储，实际中可以更改
                 up.write(meta['body'])
+        print begindate, enddate, filepath
+
+        sql = control.control.getZoneInfo(begindate, enddate, filepath)
+
+        response = "["
+        if sql is not None:
+            # response += "{'state':%s},"%(0,)
+            for t in sql:
+                response += "{'erl':%s, 'updata':%s, 'downdata':%s, 'alldata':%s}," % \
+                            (round(t.erl, 3), round(t.updata / 1024, 2), round(t.downdata / 1024, 2),
+                             round(t.alldata / 1024, 2))
+        response += "]"
+        print response
+        response_json = tornado.escape.json_encode(response)
+        self.write(response_json)
 
 
 
@@ -144,6 +171,7 @@ def make_app():
                                     (r'/login', LoginHandler),
                                     (r'/manage', ManageHandler),
                                     (r'/select', SelectHandler),
+                                    (r'/zone', ZoneHandler),
                                     (r'/upload', UploadHandler),
                                     (r'/insert',InsertHandler)],
       cookie_secret='jf0239u0fr9n',
