@@ -28,19 +28,19 @@
         <div id="search" class="ui vertical basic segment">
             <div class="ui grid">
 
-                <div class="five wide clumn">
+                <div class="three wide clumn">
 
                 </div>
 
-                <div class="six wide column">
+                <div class="ten wide column">
                     <h2 class="ui header">
                         <i class="icon star"></i>
                         单个小区查询
                     </h2>
 
                     <div class="ui form">
-                      <div class="three fields">
-                        <div class="field">
+                      <div class="four fields">
+                        <div class="two field">
                           <label>小区名称</label>
                           <input id="cellname" type="text" placeholder="小区">
                         </div>
@@ -75,7 +75,7 @@
                       <label class="" id="errorinfo"></label>
                     </div>
 
-                    <div class="five wide clumn">
+                    <div class="three wide clumn">
 
                     </div>
 
@@ -90,9 +90,9 @@
               <th>小区名</th>
               <th>日期</th>
               <th>话务量(erl)</th>
-              <th>上行流量(M)</th>
-              <th>下行流量(M)</th>
-              <th>总流量(M)</th>
+              <th>上行流量(G)</th>
+              <th>下行流量(G)</th>
+              <th>总流量(G)</th>
             </tr>
           </thead>
           <tbody id="table_body">
@@ -170,8 +170,12 @@
 
 
             var data = eval(json);
-            if ($.isEmptyObject(data))
+            //alert("json:"+json+"data:"+data+data.length)
+            if ($.isEmptyObject(data)){
               $("#errorinfo").text("请输入正确的小区名称");
+              alert("查无此小区")
+            }
+
             else{
               $("#errorinfo").text("");
               page_number = 0;

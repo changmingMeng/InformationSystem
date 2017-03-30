@@ -60,6 +60,7 @@
 
             </div>
             <input class="ui button" type="button" onclick="UploadFile();" value="提交" />
+            <label class="" id="errorinfo"></label>
           </div>
 
         </div>
@@ -68,6 +69,32 @@
 
       </div>
     </div>
+
+
+    <table id="table" class="ui celled table">
+      <thead>
+        <tr>
+          <th>起始日期</th>
+          <th>结束日期</th>
+          <th>话务量(erl)</th>
+          <th>上行流量(G)</th>
+          <th>下行流量(G)</th>
+          <th>总流量(G)</th>
+        </tr>
+      </thead>
+      <tbody id="table_body">
+
+      </tbody>
+      <tfoot id="table_foot">
+        <tr>
+          <th colspan="6">
+
+            <button class="ui button" id="backbutton" >返回</button
+          </th>
+        </tr>
+      </tfoot>
+    </table>
+
 
     <div class="ui vertical very padded inverted segment">
         <div class="ui grid">
@@ -95,6 +122,15 @@
   <script type="text/javascript">
     //$('#target-div1').JSAjaxFileUploader({uploadUrl:'upload'});
 
+    $(document).ready(function(){
+      $("table").hide()
+
+      $("#backbutton").click(function(){
+        $("#search").show()
+        $("#table").hide()
+      });
+    });
+
     $.datetimepicker.setLocale('ch');
     $('#begin_date').datetimepicker({
       dayOfWeekStart : 1,
@@ -116,18 +152,95 @@
     });
 
     function UploadFile(){
+      $("#errorinfo").text("");
+      if(!isValidDate($("#begin_date").val(), $("#end_date").val())){
+        $("#errorinfo").text("请输入正确的时间");
+        alert("请输入正确的时间")
+        return;
+      }
       //获取文件对象
       var fileObj = document.getElementById("attachmentName").files[0];
+      if (fileObj == undefined){
+        $("#errorinfo").text("请选择文件");
+        alert("请选择文件")
+        return;
+      }
+      //alert(fileObj)
       //创建form对象
       var form = new FormData();
-      form.append("k1", "v1");  //为后台发送数据
+      form.append("begin_date", $("#begin_date").val());  //为后台发送数据
+      form.append("end_date", $("#end_date").val());
       form.append("file", fileObj);
       var xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = function(e){
+        if(xhr.readyState == 4){
+          //和服务器的交互完成
+          if(xhr.status == 200){
+            //表示服务器响应代码是200，正确返回了数据
+            //纯文本数据的接受方法
+            var message = xhr.response;
+            //xml数据对应的dom对象的接受方法
+            //使用的前提，服务器设置contenttype为text/xml
+            $("#table_body").empty()
+
+            var json = message.substr(1,message.length-2)
+            var data = eval(json)
+            //alert("json:"+json+"data:"+data)
+            //alert(new Date($("#begin_date").val()))
+            if ($.isEmptyObject(data)){
+              $("#errorinfo").text("文件格式错误或内容错误");
+              alert("文件格式错误或内容错误")
+            }
+
+            else{
+              $("#errorinfo").text("");
+
+              for(var i in data){
+                var td_name = $("<td></td>").text($("#begin_date").val())
+                var td_date = $("<td></td>").text($("#end_date").val())
+                var td_erl = $("<td></td>").text(data[i].erl)
+                var td_updata = $("<td></td>").text(data[i].updata)
+                var td_downdata = $("<td></td>").text(data[i].downdata)
+                var td_alldata = $("<td></td>").text(data[i].alldata)
+                //var tr = "<tr id='row"+i+"></tr>"
+                var tr = $("<tr></tr>").addClass("row"+i)
+                tr.append(td_name,td_date,td_erl,td_updata,td_downdata,td_alldata)
+                $("#table_body").append(tr)
+              }
+            }
+          }
+        }
+        $("#search").hide()
+        $("#table").show()
+      };
       xhr.open("post", 'upload', true);
       xhr.send(form); //发送form表单
     }
 
-    var fileExtentionRange = '.zip .rar .tar .pdf .doc .docx .xls .xlsx .ppt .pptx';
+    function isValidDate(begin_date, end_date){
+      var d1 = new Date(begin_date.replace(/\-/g, "\/"));
+      var d2 = new Date(end_date.replace(/\-/g, "\/"));
+
+      if(begin_date!=""&&end_date!=""&&d1<=d2)
+        return true;
+      return false;
+    }
+
+    function UploadFileDate(){
+      //获取文件对象
+      var fileObj = document.getElementById("attachmentName").files[0];
+      $.post("upload",
+      {
+        begin_date:$("#begin_date").val(),
+        end_date:$("#end_date").val(),
+        //file:fileObj
+      },
+      function(data, status){
+        alert("Data: " + data + "\nStatus: " + status);
+      })
+    }
+
+    var fileExtentionRange = '.csv .xls .xlsx';
         var MAX_SIZE = 30; // MB
 
         $(document).on('change', '.btn-file :file', function() {

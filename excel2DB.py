@@ -134,7 +134,7 @@ class Read3GFile(object):
 
 def test():
     # rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170101.xlsx".decode("utf-8").encode("GBK"))
-    rf = Read3GFile("E:\projects\excel2DB\data\W网监控常用指标-20170302.xlsx".decode("utf-8").encode("GBK"))
+    rf = Read3GFile("E:\projects\excel2DB\data\W网监控常用指标-20170305.xlsx".decode("utf-8").encode("GBK"))
     info_lst, busi_lst = rf.read_excel()
     rf.save_info_not_firsttime(info_lst)
     rf.save_busi(busi_lst)
