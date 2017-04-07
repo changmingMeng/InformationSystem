@@ -6,6 +6,14 @@ import psycopg2
 from time import time
 import xlrd
 
+def timer(func):
+    def warpper(*args, **kw):
+        start = datetime.datetime.now()
+        func(*args, **kw)
+        end = datetime.datetime.now()
+        print end-start
+    return warpper
+
 class Utils(object):
     def GetCellId(self, desc, str):
         return desc[desc.find(str)+len(str):]
