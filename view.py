@@ -5,9 +5,11 @@ import os.path
 import tornado.ioloop
 import tornado.web
 import tornado.escape
+import json
 
 from models import *
 import control
+import baiduMap
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -164,6 +166,21 @@ class UploadHandler(tornado.web.RequestHandler):
         response_json = tornado.escape.json_encode(response)
         self.write(response_json)
 
+class MapHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        self.render("map3.html")
+
+
+class SearchHandler(tornado.web.RequestHandler):
+    def get(self):
+        addresslist = baiduMap.readCSV(r"F:\视频组\地址经纬度\7033003223217169.csv".decode("utf-8").encode("GBK"))
+        #response_json = tornado.escape.json_encode(addresslist)
+        response_json = json.dumps(addresslist)
+        self.write(response_json)
+
+
+
 
 
 def make_app():
@@ -173,6 +190,8 @@ def make_app():
                                     (r'/select', SelectHandler),
                                     (r'/zone', ZoneHandler),
                                     (r'/upload', UploadHandler),
+                                    (r'/map', MapHandler),
+                                    (r'/search', SearchHandler),
                                     (r'/insert',InsertHandler)],
       cookie_secret='jf0239u0fr9n',
       template_path=os.path.join(os.path.dirname(__file__), "templates"),
