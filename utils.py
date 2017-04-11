@@ -71,7 +71,26 @@ class Utils(object):
 
     @staticmethod
     def exceldate_to_postgredate(date):
-        return xlrd.xldate_as_tuple(date)[:3]
+        """excel读入的日期为一个数字，转化成postgreSQL.Date类型"""
+        return psycopg2.Date(*xlrd.xldate_as_tuple(date, 0)[:3])
+
+    @staticmethod
+    def strdate_to_postgredate(date):
+        """2017-01-01形式的字符串转化成postgreSQL.Date类型"""
+        b = tuple(date.split('-'))
+        return psycopg2.Date(int(b[0]), int(b[1]), int(b[2]))
+
+    @staticmethod
+    def lst_of_lst_distince_by_col(lst_of_lst, col_num):
+        result_lst = []
+        distinct_lst = []
+
+        for lst in lst_of_lst:
+            if lst[col_num] not in distinct_lst:
+                distinct_lst.append(lst[col_num])
+                result_lst.append(lst)
+
+        return result_lst
 
 
 def timer(func):
