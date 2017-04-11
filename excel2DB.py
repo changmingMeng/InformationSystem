@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import os
+import re
 import xlrd
 import psycopg2
 import datetime
@@ -7,6 +9,12 @@ import chardet
 
 from utils import Utils
 import dbManip
+
+filename_key_2g = 'G网监控常用指标'.decode("utf-8").encode("GBK")
+filename_key_3g = 'W网监控常用指标'.decode("utf-8").encode("GBK")
+filename_key_4g = 'LTE小区级日数据流量'.decode("utf-8").encode("GBK")
+
+
 def timer(func):
     def warpper(*args, **kw):
         start = datetime.datetime.now()
@@ -118,6 +126,10 @@ class Read2GFile(ReadExcelFile):
         dbconn.commit()
         dbconn.close()
 
+    def read_to_db(self):
+        info_lst, busi_lst = self.read_excel()
+        self.save_info_not_firsttime(info_lst)
+        self.save_busi(busi_lst)
 
 class Read3GFile(ReadExcelFile):
 
@@ -330,7 +342,50 @@ class Read4GFile(ReadExcelFile):
         self.save_info_not_firsttime(info_lst)
         self.save_busi(busi_lst)
 
+def multi_import(dataroot):
+    '''循环遍历文件名并处理'''
+    for root, dirs, files in os.walk(dataroot):
+        for name in files:
+            #name = name.decode("GBK").encode("utf-8")
+            if name.endswith(".xls") or name.endswith(".xlsx"):
+                if re.search(filename_key_2g, name) != None:
+                    print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                    rf = Read2GFile(os.path.join(root, name))
+                    rf.read_to_db()
+                elif re.search(filename_key_3g, name) != None:
+                    print "3G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                    rf = Read3GFile(os.path.join(root, name))
+                    rf.read_to_db()
+                elif re.search(filename_key_4g, name) != None:
+                    print "4G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                    rf = Read4GFile(os.path.join(root, name))
+                    rf.read_to_db()
+                else:
+                    pass
 
+def multi_import_by_date(dataroot, date):
+    '''date格式默认为datetime.date'''
+    date_str = str(date).replace("-", "")
+
+    for root, dirs, files in os.walk(dataroot):
+        for name in files:
+            if re.search(date_str, name):
+                #name = name.decode("GBK").encode("utf-8")
+                if name.endswith(".xls") or name.endswith(".xlsx"):
+                    if re.search(filename_key_2g, name) != None:
+                        print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                        rf = Read2GFile(os.path.join(root, name))
+                        rf.read_to_db()
+                    elif re.search(filename_key_3g, name) != None:
+                        print "3G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                        rf = Read3GFile(os.path.join(root, name))
+                        rf.read_to_db()
+                    elif re.search(filename_key_4g, name) != None:
+                        print "4G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                        rf = Read4GFile(os.path.join(root, name))
+                        rf.read_to_db()
+                    else:
+                        pass
 
 def test():
     # rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170101.xlsx".decode("utf-8").encode("GBK"))
@@ -342,20 +397,9 @@ def testlte():
     rf.read_to_db()
 
 def testgsm():
-    rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170101.xls".decode("utf-8").encode("GBK"))
-    #rf = Read2GFile("E:\projects\excel2DB\data\data.xls".decode("utf-8").encode("GBK"))
-    info_lst, busi_lst = rf.read_excel()
-    rf.save_info_not_firsttime(info_lst)
-    rf.save_busi(busi_lst)
+    rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170102.xls".decode("utf-8").encode("GBK"))
+    #rf = Read2GFile("E:\projects\excel2DB\data\data.xls".decode("utf-8").encode("GBK")
+    rf.read_to_db()
 
 if __name__ == "__main__":
-    #test()
-    testgsm()
-    # a = '2017-01-01'
-    # print a.split('-')
-    # b = tuple(a.split('-'))
-    # print psycopg2.Date(int(b[0]), int(b[1]), int(b[2]))
-    #print *tuple(a.split('-'))
-    # for i in xrange(2,5):
-    #     print i
-    #print datetime.datetime.now()
+    multi_import("E:\projects\excel2DB\data")
