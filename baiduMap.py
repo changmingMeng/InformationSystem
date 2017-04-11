@@ -43,13 +43,11 @@ import chardet
 url = 'http://api.map.baidu.com/geocoder/v2/'
 placeAPIUrl = 'http://api.map.baidu.com/place/v2/search'
 ak_lst = [
-
+          'Rl3cuYvuDMBES9TULIixBWAIOi0ES7BN',
           '38ADFrK5VVdptqmai3HnjN78p4RjjQeB',
           'UYK8YTMm8ly6Sz1aMcnXsXTO9ohni2ex',
           'YjkhAC8a6XEZqtCN0kSGL8GI1OVLTCly',
-          'Rl3cuYvuDMBES9TULIixBWAIOi0ES7BN',
           'Hej6HgVATRb3c1brHnoLh9nnfmYiP6YX',
-
           ]
 csv_order_col_number = 0
 csv_address_col_number = 16
@@ -144,7 +142,7 @@ def multiSearch(filepath):
     print "filelength= ", len(addresslist)
     for address in addresslist:
         try:
-            axis = baiduMap.getAxis(address[1], ak_lst[i/50000], "geocoder")
+            axis = baiduMap.getAxis(address[1], ak_lst[0], "geocoder")
             print i, axis
             axislist.append([i,address[0],axis[0],axis[1]])
         except:
