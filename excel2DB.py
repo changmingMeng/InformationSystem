@@ -37,30 +37,87 @@ class Read2GFile(ReadExcelFile):
         busi_lst = []
 
         with xlrd.open_workbook(self.filename) as workbook:
-            sheet = workbook.sheet_by_index(0)
+            sheet = workbook.sheet_by_index(1)#GSM话务文件的信息在第二张sheet
             print sheet.nrows
-        for r in xrange(1,sheet.nrows):#excel第2行到最后一行
+            # i =1
+        for r in xrange(1,sheet.nrows):#excel第2行到倒数第2行
             row = sheet.row_values(r)
+            if row[0]=="":
+                continue
+            # print i, row
+            # i += 1
+            name = row[1]
+            lac = int(row[2])
+            ci = int(row[3])
+            bts = row[4]
+            info_lst.append([name, lac, ci, bts])
 
-            #print row
-
-            name = row[3]
-            lac = int(row[1])
-            ci = int(row[2])
-            nodebname = row[4]
-            rncname = row[5]
-            fac = row[16]
-            info_lst.append([name, lac, ci, nodebname, rncname, fac])
-
-            #date = self.exceldate_to_postgredate(row[0])
             date = Utils.exceldate_to_postgredate(row[0])
-            erl = row[6]
-            updata = row[8] + row[10]
-            downdata = row[9] + row[11]
+            erl = row[5] if row[5] != "" else 0#把文件中空的列置零
+            updata = row[7] if row[7] != "" else 0
+            downdata = row[8] if row[8] != "" else 0
             sumdata = updata + downdata
             busi_lst.append([name, date, erl, updata, downdata, sumdata])
 
+        info_lst = Utils.lst_of_lst_distince_by_col(info_lst, 0)
+        busi_lst = Utils.lst_of_lst_distince_by_col(busi_lst, 0)
+
         return [info_lst, busi_lst]
+
+    @timer
+    def save_info_not_firsttime(self, info_lst):
+        dbconn = self.connect_to_db()
+        dbcursor = dbconn.cursor()
+
+        dbcursor.execute("create TEMPORARY table tmp_info_2g("
+                         "name text NOT NULL,"
+                         "lac text,"
+                         "ci text,"
+                         "bts text,"
+                         "PRIMARY KEY (name))")
+
+        for info in info_lst:
+            # print info
+            try:
+                dbcursor.execute("insert into tmp_info_2g (name, lac, ci, bts)\
+                                    values(%s, %s, %s, %s)", info)
+            except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
+                print e
+
+        dbcursor.execute("select name from tmp_info_2g "
+                         "except "
+                         "select name from cell_info_2g")
+        names = dbcursor.fetchall()
+        names_new = [name[0] for name in names]
+
+        # print names
+        print len(names_new), " new cells"  # , names_new
+
+        for name in names_new:
+            print name.decode("utf-8")
+            dbcursor.execute("insert into cell_info_2g "
+                             "select * from tmp_info_2g "
+                             "where name = '%s'" % name)
+
+        dbconn.commit()
+        dbconn.close()
+
+    @timer
+    def save_busi(self, busi_lst):
+        dbconn = self.connect_to_db()
+        dbcursor = dbconn.cursor()
+
+        for busi in busi_lst:
+            # print busi
+            try:
+                dbcursor.execute("insert into cell_busi_2g (name, date, erl, updata, downdata, alldata)\
+                                    values(%s, %s, %s, %s, %s, %s)", busi)
+            except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
+                print e  # 如果出错则存储整个表的事务被回滚，进一步的处理有待研究
+
+        dbconn.commit()
+        dbconn.close()
+
 
 class Read3GFile(ReadExcelFile):
 
@@ -286,10 +343,14 @@ def testlte():
 
 def testgsm():
     rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170101.xls".decode("utf-8").encode("GBK"))
+    #rf = Read2GFile("E:\projects\excel2DB\data\data.xls".decode("utf-8").encode("GBK"))
+    info_lst, busi_lst = rf.read_excel()
+    rf.save_info_not_firsttime(info_lst)
+    rf.save_busi(busi_lst)
 
 if __name__ == "__main__":
     #test()
-    testlte()
+    testgsm()
     # a = '2017-01-01'
     # print a.split('-')
     # b = tuple(a.split('-'))
