@@ -5,6 +5,7 @@ from os.path import join
 import psycopg2
 from time import time
 import xlrd
+import datetime
 
 def timer(func):
     def warpper(*args, **kw):
@@ -93,6 +94,19 @@ class Utils(object):
         return result_lst
 
 
+def get_sequence_num_of_letter(letter):
+    #print letter
+    return ord(letter.upper())-ord('A')+1
+
+def get_excel_col_number(str):
+    if len(str) == 1:
+        return get_sequence_num_of_letter(str[0])-1
+    elif len(str) == 2:
+        return get_sequence_num_of_letter(str[0])*26 +get_sequence_num_of_letter(str[1])-1
+    else:
+        raise("too many letters")
+
+
 def timer(func):
     def warpper(*args, **kw):
         tic=time()
@@ -118,9 +132,12 @@ if __name__ == "__main__":
     # list = ['2016-11-28', '22:00:00', '2G','4600125046183']
     # str = ut.dateTimeIdNTToStr(list)
 
-    print ut.tuple2Sqlite3Timestring((2017, 1, 1))
-    print ut.tuple2Sqlite3Timestring((2017, 11, 1))
-    print ut.tuple2Sqlite3Timestring((2017, 1, 11))
-    print type("七所搬迁-1")
-    print type("七所搬迁-1") is str
-    print type(1.5) is str
+    # print ut.tuple2Sqlite3Timestring((2017, 1, 1))
+    # print ut.tuple2Sqlite3Timestring((2017, 11, 1))
+    # print ut.tuple2Sqlite3Timestring((2017, 1, 11))
+    # print type("七所搬迁-1")
+    # print type("七所搬迁-1") is str
+    # print type(1.5) is str
+
+    print int(time())
+    print str(time())

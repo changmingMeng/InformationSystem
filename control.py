@@ -26,6 +26,77 @@ class control(object):
             .where((CellBusi3G.name << namelst)&(CellBusi3G.date.between(begin_date,end_date)))
         #sql = CellBusi3G.select().where(CellBusi3G.name << namelst).limit(50)
         return sql
+
+
+
+    @staticmethod
+    def getNobusiCell_prototype():
+        sql_get_ordered_table = "create temp table tem_cell_busi_2g as " \
+                                "select name, date, erl, alldata " \
+                                "from cell_busi_2g " \
+                                "order by name, date;"
+        execute_sql(sql_get_ordered_table)
+
+        sql_get_lagged_table = "create temp table tem_lagged_cell_busi_2g as " \
+                               "select *, lag(name,1) over(order by name)name_1, lag(name,2) over(order by name)name_2, lag(name,3) over(order by name)name_3, lag(name,4) over(order by name)name_4, " \
+                               "lag(erl,1) over(order by name)erl_1 , lag(erl,2) over(order by name)erl_2, lag(erl,3) over(order by name)erl_3, lag(erl,4) over(order by name)erl_4 " \
+                               "from tem_cell_busi_2g " \
+                               "order by name, date;"
+        execute_sql(sql_get_lagged_table)
+
+        sql_get_zero_busi_cell = "select * " \
+                                 "from tem_lagged_cell_busi_2g " \
+                                 "where name=name_1 and name=name_2 and name=name_3 and name=name_4 and erl<0.01 and erl_1<0.01 and erl_2<0.01 and erl_3<0.01 and erl_4<0.01 " \
+                                 "order by name, date;"
+        return execute_sql(sql_get_zero_busi_cell)
+
+    @staticmethod
+    def getNobusiCell(days, threshold, nettype):
+        lst_type = ['2g', '3g', '4g']
+        if nettype not in lst_type:
+            raise("wrong net type")
+
+        sql_get_ordered_table = "create temp table tem_cell_busi_"+nettype+" as " \
+                                "select name, date, erl, alldata " \
+                                "from cell_busi_"+nettype+" " \
+                                "order by name, date;"
+        print sql_get_ordered_table
+        execute_sql(sql_get_ordered_table)
+
+        def get_lagged_table(days, nettype):
+            str_sql = "create temp table tem_lagged_cell_busi_"+nettype+" as select *"
+            for i in range(1,days):
+                str_sql += ", lag(name,"+str(i)+") over(order by name)name_"+str(i)
+            for i in range(1,days):
+                str_sql += ", lag(erl,"+str(i)+") over(order by name)erl_"+str(i)
+            for i in range(1,days):
+                str_sql += ", lag(alldata,"+str(i)+") over(order by name)alldata_"+str(i)
+            str_sql += " from tem_cell_busi_"+nettype+" order by name, date;"
+            return str_sql
+        sql_get_lagged_table = get_lagged_table(days, nettype)
+        print sql_get_lagged_table
+        execute_sql(sql_get_lagged_table)
+
+        def get_zero_erl_cell(days, threshold, nettype):
+            str_sql = "select * from tem_lagged_cell_busi_"+nettype+" where"
+            for i in range(1,days):
+                str_sql += " name=name_"+str(i)+" and "
+            if threshold == 0:
+                str_sql += "erl=0 and "
+                for i in range(1,days):
+                    str_sql += "erl_"+str(i)+"=0 and "
+            else:
+                str_sql += "erl<"+str(threshold)+" and "
+                for i in range(1,days):
+                    str_sql += "erl_"+str(i)+"<"+str(threshold)+" and "
+            str_sql += "true order by name, date;"
+            return str_sql
+        sql_get_zero_busi_cell = get_zero_erl_cell(days, threshold, nettype)
+        print sql_get_zero_busi_cell
+        return execute_sql(sql_get_zero_busi_cell).fetchall()
+
+
+
 def test(filepath):
     print control.getListFromCSV(filepath)
     ctl = control()
@@ -37,4 +108,6 @@ def test(filepath):
         print "sql is None"
 
 if __name__ == "__main__":
-    test(r"E:\developtools\PyCharm 2016.3\projects\InformationSystem\files\test.csv")
+    #test(r"E:\developtools\PyCharm 2016.3\projects\InformationSystem\files\test.csv")
+    for result in control.getNobusiCell(5, 0, '2g'):
+        print result
