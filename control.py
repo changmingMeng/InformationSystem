@@ -51,10 +51,13 @@ class control(object):
         return execute_sql(sql_get_zero_busi_cell)
 
     @staticmethod
-    def getNobusiCell(days, threshold, nettype):
+    def getNobusiCell(days, threshold, nettype, busitype):
         lst_type = ['2g', '3g', '4g']
+        lst_busitype = ['erl', 'data']
         if nettype not in lst_type:
             raise("wrong net type")
+        if busitype not in lst_busitype:
+            raise("wrong busi type")
 
         sql_get_ordered_table = "create temp table tem_cell_busi_"+nettype+" as " \
                                 "select name, date, erl, alldata " \
@@ -91,9 +94,31 @@ class control(object):
                     str_sql += "erl_"+str(i)+"<"+str(threshold)+" and "
             str_sql += "true order by name, date;"
             return str_sql
-        sql_get_zero_busi_cell = get_zero_erl_cell(days, threshold, nettype)
+
+        def get_zero_data_cell(days, threshold, nettype):
+            str_sql = "select * from tem_lagged_cell_busi_" + nettype + " where"
+            for i in range(1, days):
+                str_sql += " name=name_" + str(i) + " and "
+            if threshold == 0:
+                str_sql += "alldata=0 and "
+                for i in range(1, days):
+                    str_sql += "alldata_" + str(i) + "=0 and "
+            else:
+                str_sql += "alldata<" + str(threshold) + " and "
+                for i in range(1, days):
+                    str_sql += "alldata_" + str(i) + "<" + str(threshold) + " and "
+            str_sql += "true order by name, date;"
+            return str_sql
+        if busitype == 'erl':
+            sql_get_zero_busi_cell = get_zero_erl_cell(days, threshold, nettype)
+        elif busitype == 'data':
+            sql_get_zero_busi_cell = get_zero_data_cell(days, threshold, nettype)
         print sql_get_zero_busi_cell
-        return execute_sql(sql_get_zero_busi_cell).fetchall()
+        result = execute_sql(sql_get_zero_busi_cell).fetchall()
+        #删除临时表以便下次查询
+        execute_sql("drop table tem_cell_busi_" + nettype)
+        execute_sql("drop table tem_lagged_cell_busi_" + nettype)
+        return result
 
 
 
@@ -109,5 +134,7 @@ def test(filepath):
 
 if __name__ == "__main__":
     #test(r"E:\developtools\PyCharm 2016.3\projects\InformationSystem\files\test.csv")
-    for result in control.getNobusiCell(5, 0, '2g'):
+    lst_result = control.getNobusiCell(3, 0.01, '2g', 'data')
+    print len(lst_result)
+    for result in lst_result:
         print result

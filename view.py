@@ -6,6 +6,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.escape
 import json
+import time
 
 from models import *
 import control
@@ -43,21 +44,6 @@ class ManageHandler(tornado.web.RequestHandler):
   def get(self):
     print "running ManageHandler get()"
     self.render('result.html')
-
-class InsertHandler(tornado.web.RequestHandler):
-  """向数据库存储信息"""
-  def get(self):
-    self.render("test.html")
-
-  def post(self):
-    province = self.get_argument('province')
-    city = self.get_argument('city')
-    carnum = self.get_argument('carnum')
-    descript = self.get_argument('descript')
-    print "view::InsertHandler", province, city, carnum, descript
-    ctl = Control.Control()
-    ctl.insert(province+city+carnum, descript, "E:/picture/")
-    self.redirect('/manage')
 
 
 
@@ -146,9 +132,10 @@ class UploadHandler(tornado.web.RequestHandler):
         file_metas = self.request.files['file']  # 提取表单中‘name’为‘file’的文件元数据
         for meta in file_metas:
             filename = meta['filename']
+            filename = str(time.time()).replace(".","") + filename
             filepath = os.path.join(upload_path, filename)
             self.filepath = filepath
-            with open(filepath, 'wb') as up:  # 有些文件需要已二进制的形式存储，实际中可以更改
+            with open(filepath, 'wb') as up:  # 有些文件需要以二进制的形式存储，实际中可以更改
                 up.write(meta['body'])
         print begindate, enddate, filepath
 
@@ -179,6 +166,33 @@ class SearchHandler(tornado.web.RequestHandler):
         response_json = json.dumps(addresslist)
         self.write(response_json)
 
+class ZeroBusiHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        print "ZeroBusiHandler.get"
+        self.render("zero.html")
+
+    def post(self):
+        print "ZeroBusiHandler.post"
+        begindate = self.get_argument("begin_date")
+        enddate = self.get_argument("end_date")
+        nettype = self.get_argument("net_type")
+        days = self.get_argument("days")
+        threshold = self.get_argument("threshold")
+        busitype = self.get_argument("busitype")
+        print begindate, enddate, nettype, days, threshold, busitype
+
+        result = control.control.getNobusiCell(int(days), float(threshold), nettype, busitype)
+        response = "["
+        if result is not None:
+            # response += "{'state':%s},"%(0,)
+            for t in result:
+                response += "{'name':'%s', 'date':'%s', 'nettype':'%s'}," % \
+                            (t[0], t[1], nettype)
+        response += "]"
+        print response
+        response_json = tornado.escape.json_encode(response)
+        self.write(response_json)
 
 
 
@@ -189,10 +203,10 @@ def make_app():
                                     (r'/manage', ManageHandler),
                                     (r'/select', SelectHandler),
                                     (r'/zone', ZoneHandler),
+                                    (r'/zero', ZeroBusiHandler),
                                     (r'/upload', UploadHandler),
                                     (r'/map', MapHandler),
-                                    (r'/search', SearchHandler),
-                                    (r'/insert',InsertHandler)],
+                                    (r'/search', SearchHandler)],
       cookie_secret='jf0239u0fr9n',
       template_path=os.path.join(os.path.dirname(__file__), "templates"),
       static_path=os.path.join(os.path.dirname(__file__), "static"),
