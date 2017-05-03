@@ -153,6 +153,25 @@ class UploadHandler(tornado.web.RequestHandler):
         response_json = tornado.escape.json_encode(response)
         self.write(response_json)
 
+
+class DownloadHandler(tornado.web.RequestHandler):
+    def get(self):
+        #filename = "zero_cell.xlsx"
+        filename = self.get_argument("filename")
+        #self.set_header('Content-Type', 'application/octet-stream')
+        self.set_header('Content-Type', 'application/x-download')
+        self.set_header('Content-Disposition', 'attachment; filename=' + filename)
+        buf_size = 4096
+        download_path = os.path.join(os.path.dirname(__file__), 'downFiles')
+        filepath = os.path.join(download_path, filename)
+        with open(os.path.join('', filepath), 'rb') as f:
+            while True:
+                data = f.read(buf_size)
+                if not data:
+                    break
+                self.write(data)
+        self.finish()
+
 class MapHandler(tornado.web.RequestHandler):
 
     def get(self):
@@ -183,14 +202,21 @@ class ZeroBusiHandler(tornado.web.RequestHandler):
         print begindate, enddate, nettype, days, threshold, busitype
 
         result = control.control.getNobusiCell(int(days), float(threshold), nettype, busitype)
-        response = "["
+        #在服务器本地生成文件
+        download_path = os.path.join(os.path.dirname(__file__), 'downFiles')
+        filename = str(time.time()).replace(".","")+'zero_cell.xlsx'
+        control.control.write2Excel(result, os.path.join(download_path, filename))
+        filejson = "'" + filename + "'"
+        #以json形式返回到浏览器
+        data = "["
         if result is not None:
             # response += "{'state':%s},"%(0,)
             for t in result:
-                response += "{'name':'%s', 'date':'%s', 'nettype':'%s'}," % \
+                data += "{'name':'%s', 'date':'%s', 'nettype':'%s'}," % \
                             (t[0], t[1], nettype)
-        response += "]"
-        print response
+        data += "]"
+        print data
+        response = "["+filejson+","+data+"]"
         response_json = tornado.escape.json_encode(response)
         self.write(response_json)
 
@@ -205,6 +231,7 @@ def make_app():
                                     (r'/zone', ZoneHandler),
                                     (r'/zero', ZeroBusiHandler),
                                     (r'/upload', UploadHandler),
+                                    (r'/download', DownloadHandler),
                                     (r'/map', MapHandler),
                                     (r'/search', SearchHandler)],
       cookie_secret='jf0239u0fr9n',
