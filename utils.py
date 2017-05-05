@@ -148,4 +148,6 @@ if __name__ == "__main__":
     # print type(1.5) is str
 
     now_time = localtime(time()).tm_hour
+    now_date = datetime.datetime.now().date()
     print now_time
+    print now_date

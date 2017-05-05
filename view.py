@@ -266,6 +266,10 @@ def make_app():
 
 def read_data_to_db():
     print datetime.datetime.now(), "read_data_to_db"
+    dataroots = []
+    date = datetime.datetime.now().date()
+    for dataroot in dataroots:
+        excel2DB.multi_import_by_date(dataroot, date)
 
 
 def general_zero_temp_table():
