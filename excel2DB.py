@@ -6,9 +6,23 @@ import xlrd
 import psycopg2
 import datetime
 import chardet
+import logging
 
 from utils import Utils
 import dbManip
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='import_db.log',
+                    filemode='a')
+
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+logging.getLogger('').addHandler(console)
 
 filename_key_2g = 'G网监控常用指标'.decode("utf-8").encode("GBK")
 filename_key_3g = 'W网监控常用指标'.decode("utf-8").encode("GBK")
@@ -21,6 +35,7 @@ def timer(func):
         func(*args, **kw)
         end = datetime.datetime.now()
         print end-start
+        logging.DEBUG(end-start)
     return warpper
 
 class ReadExcelFile(object):
@@ -47,8 +62,9 @@ class Read2GFile(ReadExcelFile):
         with xlrd.open_workbook(self.filename) as workbook:
             sheet = workbook.sheet_by_index(1)#GSM话务文件的信息在第二张sheet
             print sheet.nrows
+            logging.DEBUG(sheet.nrows)
             # i =1
-        for r in xrange(1,sheet.nrows):#excel第2行到倒数第2行
+        for r in xrange(1,sheet.nrows):#excel第2行到最后一行
             row = sheet.row_values(r)
             if row[0]=="":
                 continue
@@ -91,6 +107,7 @@ class Read2GFile(ReadExcelFile):
                                     values(%s, %s, %s, %s)", info)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e
+                logging.INFO(e)
 
         dbcursor.execute("select name from tmp_info_2g "
                          "except "
@@ -103,6 +120,7 @@ class Read2GFile(ReadExcelFile):
 
         for name in names_new:
             print name.decode("utf-8")
+            logging.INFO(name.decode("utf-8"))
             dbcursor.execute("insert into cell_info_2g "
                              "select * from tmp_info_2g "
                              "where name = '%s'" % name)
@@ -122,6 +140,7 @@ class Read2GFile(ReadExcelFile):
                                     values(%s, %s, %s, %s, %s, %s)", busi)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e  # 如果出错则存储整个表的事务被回滚，进一步的处理有待研究
+                logging.INFO(e)
 
         dbconn.commit()
         dbconn.close()
@@ -142,6 +161,7 @@ class Read3GFile(ReadExcelFile):
         with xlrd.open_workbook(self.filename) as workbook:
             sheet = workbook.sheet_by_index(0)
             print sheet.nrows
+            logging.DEBUG(sheet.nrows)
         for r in xrange(1,sheet.nrows):#excel第2行到最后一行
             row = sheet.row_values(r)
 
@@ -182,6 +202,7 @@ class Read3GFile(ReadExcelFile):
                                 values(%s, %s, %s, %s, %s, %s)",info)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e
+                logging.info(e)
         dbconn.commit()
         dbconn.close()
 
@@ -206,6 +227,7 @@ class Read3GFile(ReadExcelFile):
                                 values(%s, %s, %s, %s, %s, %s)",info)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e
+                logging.info(e)
 
         dbcursor.execute("select name from tmp_info_3g "
                          "except "
@@ -218,6 +240,7 @@ class Read3GFile(ReadExcelFile):
 
         for name in names_new:
             print name.decode("utf-8")
+            logging.INFO(name.decode("utf-8"))
             dbcursor.execute("insert into cell_info_3g "
                              "select * from tmp_info_3g "
                              "where name = '%s'"%name)
@@ -237,7 +260,8 @@ class Read3GFile(ReadExcelFile):
                                 values(%s, %s, %s, %s, %s, %s)",busi)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e #如果出错则存储整个表的事务被回滚，进一步的处理有待研究
-                        #
+                logging.INFO(e)
+
         dbconn.commit()
         dbconn.close()
 

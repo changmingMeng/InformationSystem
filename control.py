@@ -3,6 +3,7 @@
 
 import os.path
 import csv
+from openpyxl import Workbook
 
 from models import *
 
@@ -78,10 +79,14 @@ class control(object):
             return str_sql
         sql_get_lagged_table = get_lagged_table(days, nettype)
         print sql_get_lagged_table
-        execute_sql(sql_get_lagged_table)
+        try:
+            execute_sql(sql_get_lagged_table)
+        except:
+            execute_sql("drop table tem_cell_busi_" + nettype)
+            raise("SQL error!")
 
         def get_zero_erl_cell(days, threshold, nettype):
-            str_sql = "select * from tem_lagged_cell_busi_"+nettype+" where"
+            str_sql = "select name,min(date) from tem_lagged_cell_busi_"+nettype+" where"
             for i in range(1,days):
                 str_sql += " name=name_"+str(i)+" and "
             if threshold == 0:
@@ -92,11 +97,11 @@ class control(object):
                 str_sql += "erl<"+str(threshold)+" and "
                 for i in range(1,days):
                     str_sql += "erl_"+str(i)+"<"+str(threshold)+" and "
-            str_sql += "true order by name, date;"
+            str_sql += "true group by name order by name;"
             return str_sql
 
         def get_zero_data_cell(days, threshold, nettype):
-            str_sql = "select * from tem_lagged_cell_busi_" + nettype + " where"
+            str_sql = "select name,min(date) from tem_lagged_cell_busi_" + nettype + " where"
             for i in range(1, days):
                 str_sql += " name=name_" + str(i) + " and "
             if threshold == 0:
@@ -107,20 +112,37 @@ class control(object):
                 str_sql += "alldata<" + str(threshold) + " and "
                 for i in range(1, days):
                     str_sql += "alldata_" + str(i) + "<" + str(threshold) + " and "
-            str_sql += "true order by name, date;"
+            str_sql += "true group by name order by name;"
             return str_sql
         if busitype == 'erl':
             sql_get_zero_busi_cell = get_zero_erl_cell(days, threshold, nettype)
         elif busitype == 'data':
             sql_get_zero_busi_cell = get_zero_data_cell(days, threshold, nettype)
         print sql_get_zero_busi_cell
-        result = execute_sql(sql_get_zero_busi_cell).fetchall()
+        try:
+            result = execute_sql(sql_get_zero_busi_cell).fetchall()
+        except:
+            execute_sql("drop table tem_cell_busi_" + nettype)
+            execute_sql("drop table tem_lagged_cell_busi_" + nettype)
+            raise ("SQL error!")
         #删除临时表以便下次查询
         execute_sql("drop table tem_cell_busi_" + nettype)
         execute_sql("drop table tem_lagged_cell_busi_" + nettype)
         return result
 
+    @staticmethod
+    def write2Excel(lst_result, filepath):
+        wb = Workbook()
+        ws = wb.active
 
+        r = 0
+        for t in lst_result:
+            r += 1
+            ws.cell(row=r, column=1, value=t[0])
+            ws.cell(row=r, column=2, value=t[1])
+        print r
+
+        wb.save(filepath)
 
 def test(filepath):
     print control.getListFromCSV(filepath)

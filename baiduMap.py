@@ -7,6 +7,7 @@ import csv
 import json
 import urllib2
 from utils import timer
+import utils
 import chardet
 
 
@@ -49,8 +50,8 @@ ak_lst = [
           'YjkhAC8a6XEZqtCN0kSGL8GI1OVLTCly',
           'Hej6HgVATRb3c1brHnoLh9nnfmYiP6YX',
           ]
-csv_order_col_number = 0
-csv_address_col_number = 16
+csv_order_col_number = utils.get_excel_col_number('A')
+csv_address_col_number = utils.get_excel_col_number('Q')
 excel_order_col_number = 0
 excel_address_col_number = 0
 #output_col_name = {1:"订单号", 2:"经度", 3:"纬度"}
@@ -183,8 +184,8 @@ if __name__ == "__main__":
     #print multiSearch(r"F:\视频组\投诉\3-30\address.csv".decode("utf-8").encode("GBK"))
     #print baiduMap.getAxis("华南理工大学广州学院",ak_lst[0])
     #print getAddressList(r"F:\视频组\投诉\3-30\address.xlsx".decode("utf-8").encode("GBK"))
-    test(r"F:\视频组\地址经纬度\bilibili广州.csv".decode("utf-8").encode("GBK"),
-         r"F:\视频组\地址经纬度\bilibili广州_result.xlsx".decode("utf-8").encode("GBK"))
+    test(r"F:\视频组\地址经纬度\4-12\腾讯王卡订单明细_7041209535221215.csv\7041209535221215.csv".decode("utf-8").encode("GBK"),
+         r"F:\视频组\地址经纬度\4-12\腾讯王卡订单明细_7041209535221215.csv\腾讯王卡订单明细_7041209535221215.csv_result.xlsx".decode("utf-8").encode("GBK"))
     #[113.36763702320629, 23.14023770937979]
     #[113.36763702320629, 23.14023770937979]
 

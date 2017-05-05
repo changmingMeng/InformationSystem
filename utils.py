@@ -3,7 +3,8 @@
 import os
 from os.path import join
 import psycopg2
-from time import time
+from time import time, localtime
+from datetime import date
 import xlrd
 import datetime
 
@@ -82,6 +83,13 @@ class Utils(object):
         return psycopg2.Date(int(b[0]), int(b[1]), int(b[2]))
 
     @staticmethod
+    def strdate_to_date(input_date):
+        """2017-01-01形式的字符串转化成date类型"""
+        b = tuple(input_date.split('-'))
+        print b
+        return date(int(b[0]), int(b[1]), int(b[2]))
+
+    @staticmethod
     def lst_of_lst_distince_by_col(lst_of_lst, col_num):
         result_lst = []
         distinct_lst = []
@@ -139,5 +147,5 @@ if __name__ == "__main__":
     # print type("七所搬迁-1") is str
     # print type(1.5) is str
 
-    print int(time())
-    print str(time())
+    now_time = localtime(time()).tm_hour
+    print now_time

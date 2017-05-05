@@ -7,10 +7,13 @@ import tornado.web
 import tornado.escape
 import json
 import time
+import datetime
 
 from models import *
 import control
 import baiduMap
+from utils import Utils
+import excel2DB
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -58,11 +61,32 @@ class SelectHandler(tornado.web.RequestHandler):
         nettype = self.get_argument('type')
         print nettype
         date = self.get_argument('date')
+        end_date = self.get_argument('end_date')
         print date
 
         likename = '%'+selectname+'%'
         print likename
-        sql = CellBusi3G.select().where(CellBusi3G.name % likename).limit(50)
+
+        if date.replace(" ","") == "":
+            sql = CellBusi3G.select()\
+                .where(CellBusi3G.name % likename) \
+                .order_by(CellBusi3G.name, CellBusi3G.date) \
+                .limit(50)
+        else:
+            if end_date.replace(" ","") == "":
+                sql = CellBusi3G.select()\
+                    .where((CellBusi3G.name % likename)
+                           & (CellBusi3G.date == Utils.strdate_to_date(date))) \
+                    .order_by(CellBusi3G.name, CellBusi3G.date) \
+                    .limit(50)
+            else:
+                sql = CellBusi3G.select() \
+                    .where((CellBusi3G.name % likename)
+                           & (CellBusi3G.date >= Utils.strdate_to_date(date))
+                           & (CellBusi3G.date <= Utils.strdate_to_date(end_date))) \
+                    .order_by(CellBusi3G.name, CellBusi3G.date) \
+                    .limit(50)
+
 
         response = "["
         if sql is not None:
@@ -240,8 +264,28 @@ def make_app():
       debug=True,
     )
 
+def read_data_to_db():
+    print datetime.datetime.now(), "read_data_to_db"
+
+
+def general_zero_temp_table():
+    print datetime.datetime.now(), "read_data_to_db"
+
+def check_cell_busi():
+    print datetime.datetime.now(), "read_data_to_db"
+
+def scheduled_tasks():
+    now_time = time.localtime(time.time()).tm_hour
+    if now_time == 6:
+        general_zero_temp_table()
+    elif now_time == 7:
+        check_cell_busi()
+    elif now_time == 23:
+        read_data_to_db()
+
 
 if __name__ == "__main__":
   app = make_app()
   app.listen(8000)
+  tornado.ioloop.PeriodicCallback(scheduled_tasks, 60*60*1000).start()
   tornado.ioloop.IOLoop.current().start()
