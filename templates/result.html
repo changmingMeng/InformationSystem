@@ -11,12 +11,16 @@
         <script type="text/javascript" src="../static/js/jquery.datetimepicker.full.js"></script>
         <link rel="stylesheet" type="text/css" href="../static/css/jquery.datetimepicker.css"/ >
         <link rel="stylesheet" type="text/css" href="../static/css/semantic.css" media="screen" title="no title" charset="utf-8">
+        <style type="text/css">
+          body{font-family:"黑体";}
+        </style>
         <!-- <link rel="stylesheet" href="../static/css/jedate/skin/gray.css" id="jeDateSkin" media="screen" title="no title" charset="utf-8"> -->
     </head>
     <body>
         <div class="ui fixed inverted menu">
             <a href="manage" class="item">小区查询</a>
             <a href="zone" class="item">区域查询</a>
+            <a href="zero" class="item">零业务查询</a>
             <a href="#" class="item">Other</a>
         </div>
         <div class="ui vertical basic segment">
@@ -56,12 +60,15 @@
                         </div>
 
                         <div class="field">
-                          <label>日期</label>
-
-
+                          <label>起始日期</label>
                               <!-- <input type="text" placeholder="Date/Time"> -->
                           <!-- <input id="date" type="text" placeholder="选择日期" value=""  readonly> -->
-                          <input type="text" value="" id="date" placeholder="选择日期"/>
+                          <input type="text" value="" id="date" placeholder="此处不填查询所有日期"/>
+                        </div>
+
+                        <div class="field">
+                          <label>结束日期</label>
+                          <input type="text" value="" id="end_date" placeholder="此处不填查询单日数据"/>
 
                         </div>
                       </div>
@@ -162,7 +169,8 @@
           {
             name:$("#cellname").val(),
             type:$("#celltype").val(),
-            date:$("#date").val()
+            date:$("#date").val(),
+            end_date:$("#end_date").val()
           },
           function(json){
             $("#table_body").empty()
@@ -237,6 +245,12 @@
       //lang:'ch',
       //disabledDates:['1986/01/08','1986/01/09','1986/01/10'],
       //startDate:	'/01/05'
+    });
+
+    $('#end_date').datetimepicker({
+      dayOfWeekStart : 1,
+      format:"Y-m-d",
+      timepicker:false
     });
 
     function page_click(buttonId){
