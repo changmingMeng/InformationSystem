@@ -16,30 +16,35 @@ from utils import Utils
 import excel2DB
 
 
-class MainHandler(tornado.web.RequestHandler):
-  """主索引的处理"""
-  def get(self):
-      print "running MainHandler get()"
-      self.redirect('/login', permanent=False, status=302)
+dataroots = [r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
+             r'F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份',
+             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\爱立信\LTE小区级日数据流量及忙时KPI指标备份',
+             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份']
+
+# class MainHandler(tornado.web.RequestHandler):
+#   """主索引的处理"""
+#   def get(self):
+#       print "running MainHandler get()"
+#       self.redirect('/login', permanent=False, status=302)
 
 
 
-class LoginHandler(tornado.web.RequestHandler):
-  """登录界面的请求处理"""
-  def get(self):
-      print "running LoginHandler get()"
-      self.render("login.html")
-
-  def post(self):
-    #debug版伪登入
-    print "running LoginHandler post()"
-    account = self.get_argument("account")
-    password = self.get_argument("password")
-    print account, password
-    if account == password:
-      self.redirect('/manage', permanent=False, status=302)
-    else:
-      self.add_header("userlogin", "fail")
+# class LoginHandler(tornado.web.RequestHandler):
+#   """登录界面的请求处理"""
+#   def get(self):
+#       print "running LoginHandler get()"
+#       self.render("login.html")
+#
+#   def post(self):
+#     #debug版伪登入
+#     print "running LoginHandler post()"
+#     account = self.get_argument("account")
+#     password = self.get_argument("password")
+#     print account, password
+#     if account == password:
+#       self.redirect('/manage', permanent=False, status=302)
+#     else:
+#       self.add_header("userlogin", "fail")
 
 
 class ManageHandler(tornado.web.RequestHandler):
@@ -196,18 +201,18 @@ class DownloadHandler(tornado.web.RequestHandler):
                 self.write(data)
         self.finish()
 
-class MapHandler(tornado.web.RequestHandler):
-
-    def get(self):
-        self.render("map3.html")
-
-
-class SearchHandler(tornado.web.RequestHandler):
-    def get(self):
-        addresslist = baiduMap.readCSV(r"F:\视频组\地址经纬度\7033003223217169.csv".decode("utf-8").encode("GBK"))
-        #response_json = tornado.escape.json_encode(addresslist)
-        response_json = json.dumps(addresslist)
-        self.write(response_json)
+# class MapHandler(tornado.web.RequestHandler):
+#
+#     def get(self):
+#         self.render("map3.html")
+#
+#
+# class SearchHandler(tornado.web.RequestHandler):
+#     def get(self):
+#         addresslist = baiduMap.readCSV(r"F:\视频组\地址经纬度\7033003223217169.csv".decode("utf-8").encode("GBK"))
+#         #response_json = tornado.escape.json_encode(addresslist)
+#         response_json = json.dumps(addresslist)
+#         self.write(response_json)
 
 class ZeroBusiHandler(tornado.web.RequestHandler):
 
@@ -245,19 +250,36 @@ class ZeroBusiHandler(tornado.web.RequestHandler):
         self.write(response_json)
 
 
+class BackstageHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        user = self.get_argument('user')
+        code = self.get_argument('code')
+        date = self.get_argument('date')
+        operation = self.get_argument('operation')
+        if user == 'UnicomWangyou':
+            if code == 'Year' and operation == 'Insert':
+                for dataroot in dataroots:
+                    excel2DB.multi_import(dataroot.decode('utf-8').encode('GBK'), date)
+
+
+#http://10.117.240.36:8000/back?user=UnicomWangyou&code=Year&date=2017&operation=Insert
+
 
 
 def make_app():
     return tornado.web.Application([(r'/', ManageHandler),
-                                    (r'/login', LoginHandler),
+                                    #(r'/login', LoginHandler),
                                     (r'/manage', ManageHandler),
                                     (r'/select', SelectHandler),
                                     (r'/zone', ZoneHandler),
                                     (r'/zero', ZeroBusiHandler),
                                     (r'/upload', UploadHandler),
                                     (r'/download', DownloadHandler),
-                                    (r'/map', MapHandler),
-                                    (r'/search', SearchHandler)],
+                                    (r'/back', BackstageHandler),
+                                    #(r'/map', MapHandler),
+                                    #(r'/search', SearchHandler)
+                                    ],
       cookie_secret='jf0239u0fr9n',
       template_path=os.path.join(os.path.dirname(__file__), "templates"),
       static_path=os.path.join(os.path.dirname(__file__), "static"),
@@ -266,10 +288,10 @@ def make_app():
 
 def read_data_to_db():
     print datetime.datetime.now(), "read_data_to_db"
-    dataroots = []
+
     date = datetime.datetime.now().date()
     for dataroot in dataroots:
-        excel2DB.multi_import_by_date(dataroot, date)
+        excel2DB.multi_import_by_date(dataroot.decode('utf-8').encode('GBK'), date)
 
 
 def general_zero_temp_table():

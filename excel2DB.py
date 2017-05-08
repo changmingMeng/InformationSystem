@@ -366,12 +366,12 @@ class Read4GFile(ReadExcelFile):
         self.save_info_not_firsttime(info_lst)
         self.save_busi(busi_lst)
 
-def multi_import(dataroot):
+def multi_import(dataroot, year = '2017'):
     '''循环遍历文件名并处理'''
     for root, dirs, files in os.walk(dataroot):
         for name in files:
             #name = name.decode("GBK").encode("utf-8")
-            if name.endswith(".xls") or name.endswith(".xlsx"):
+            if re.search(year, name) and (name.endswith(".xls") or name.endswith(".xlsx")):
                 if re.search(filename_key_2g, name) != None:
                     print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
                     rf = Read2GFile(os.path.join(root, name))
