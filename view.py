@@ -16,10 +16,11 @@ from utils import Utils
 import excel2DB
 
 
-dataroots = [r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
-             r'F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份',
-             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\爱立信\LTE小区级日数据流量及忙时KPI指标备份',
-             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份']
+# dataroots = [r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
+#              r'F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份',
+#              r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\爱立信\LTE小区级日数据流量及忙时KPI指标备份',
+#              r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份']
+dataroots = [r'E:\projects\excel2DB\data']
 
 # class MainHandler(tornado.web.RequestHandler):
 #   """主索引的处理"""
@@ -257,10 +258,15 @@ class BackstageHandler(tornado.web.RequestHandler):
         code = self.get_argument('code')
         date = self.get_argument('date')
         operation = self.get_argument('operation')
+        #print user,code,date,operation
         if user == 'UnicomWangyou':
             if code == 'Year' and operation == 'Insert':
                 for dataroot in dataroots:
                     excel2DB.multi_import(dataroot.decode('utf-8').encode('GBK'), date)
+            if code == 'Singleday' and operation == 'Insert':
+                date = Utils.strdate_to_date(date)
+                for dataroot in dataroots:
+                    excel2DB.multi_import_by_date(dataroot.decode('utf-8').encode('GBK'), date)
 
 
 #http://10.117.240.36:8000/back?user=UnicomWangyou&code=Year&date=2017&operation=Insert
