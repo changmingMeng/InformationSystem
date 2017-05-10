@@ -411,6 +411,15 @@ def multi_import_by_date(dataroot, date):
                     else:
                         pass
 
+def multi_import_during_date(dataroot, begin_date, end_date):
+    '''date格式默认为datetime.date'''
+    #遍历begin_date和end_date之间的所有date
+    date = begin_date
+    while date <= end_date:
+        #print date
+        multi_import_by_date(dataroot, date)
+        date = date + datetime.timedelta(days=1)
+
 def test():
     # rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170101.xlsx".decode("utf-8").encode("GBK"))
     rf = Read3GFile("E:\projects\excel2DB\data\W网监控常用指标-20170310.xlsx".decode("utf-8").encode("GBK"))
@@ -426,4 +435,6 @@ def testgsm():
     rf.read_to_db()
 
 if __name__ == "__main__":
-    multi_import("E:\projects\excel2DB\data")
+    #multi_import("E:\projects\excel2DB\data")
+
+    multi_import_during_date("E:\projects\excel2DB\data", datetime.date(2017, 5, 1), datetime.date(2017, 5, 5))
