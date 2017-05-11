@@ -221,6 +221,7 @@ class ZeroBusiHandler(tornado.web.RequestHandler):
         print "ZeroBusiHandler.get"
         self.render("zero.html")
 
+
     def post(self):
         print "ZeroBusiHandler.post"
         begindate = self.get_argument("begin_date")
@@ -230,8 +231,9 @@ class ZeroBusiHandler(tornado.web.RequestHandler):
         threshold = self.get_argument("threshold")
         busitype = self.get_argument("busitype")
         print begindate, enddate, nettype, days, threshold, busitype
-
-        result = control.control.getNobusiCell(int(days), float(threshold), nettype, busitype)
+        #调用control库中的方法操作数据库获得零业务小区
+        #result = control.control.getNobusiCell(int(days), float(threshold), nettype, busitype)
+        result = control.control.quick_zero_busi_cell(busitype,days,threshold,nettype)
         #在服务器本地生成文件
         download_path = os.path.join(os.path.dirname(__file__), 'downFiles')
         filename = str(time.time()).replace(".","")+'zero_cell.xlsx'
@@ -251,6 +253,7 @@ class ZeroBusiHandler(tornado.web.RequestHandler):
         self.write(response_json)
 
 
+
 class BackstageHandler(tornado.web.RequestHandler):
 
     def get(self):
@@ -258,6 +261,8 @@ class BackstageHandler(tornado.web.RequestHandler):
         code = self.get_argument('code')
         date = self.get_argument('date')
         operation = self.get_argument('operation')
+        enddate = self.get_argument('enddate')
+
         #print user,code,date,operation
         if user == 'UnicomWangyou':
             if code == 'Year' and operation == 'Insert':
@@ -267,6 +272,11 @@ class BackstageHandler(tornado.web.RequestHandler):
                 date = Utils.strdate_to_date(date)
                 for dataroot in dataroots:
                     excel2DB.multi_import_by_date(dataroot.decode('utf-8').encode('GBK'), date)
+            if code == 'Multiday' and operation == 'Insert':
+                date = Utils.strdate_to_date(date)
+                enddate = Utils.strdate_to_date(enddate)
+                for dataroot in dataroots:
+                    excel2DB.multi_import_during_date(dataroot.decode('utf-8').encode('GBK'), date, enddate)
 
 
 #http://10.117.240.36:8000/back?user=UnicomWangyou&code=Year&date=2017&operation=Insert
@@ -302,6 +312,7 @@ def read_data_to_db():
 
 def general_zero_temp_table():
     print datetime.datetime.now(), "read_data_to_db"
+    control.control.prepare_no_busi_cell()
 
 def check_cell_busi():
     print datetime.datetime.now(), "read_data_to_db"
