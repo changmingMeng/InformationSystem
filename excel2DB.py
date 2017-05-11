@@ -81,7 +81,11 @@ class Read2GFile(ReadExcelFile):
             updata = row[7] if row[7] != "" else 0
             downdata = row[8] if row[8] != "" else 0
             sumdata = updata + downdata
-            busi_lst.append([name, date, erl, updata, downdata, sumdata])
+            item = [name, date, erl, updata, downdata, sumdata]
+            for i in range(len(item)):
+                if item[i] == "":
+                    item[i] = 0
+            busi_lst.append(item)
 
         info_lst = Utils.lst_of_lst_distince_by_col(info_lst, 0)
         busi_lst = Utils.lst_of_lst_distince_by_col(busi_lst, 0)
@@ -181,7 +185,11 @@ class Read3GFile(ReadExcelFile):
             updata = row[8] + row[10]
             downdata = row[9] + row[11]
             sumdata = updata + downdata
-            busi_lst.append([name, date, erl, updata, downdata, sumdata])
+            item = [name, date, erl, updata, downdata, sumdata]
+            for i in range(len(item)):
+                if item[i] == "":
+                    item[i] = 0
+            busi_lst.append(item)
 
         return [info_lst, busi_lst]
 
@@ -218,7 +226,8 @@ class Read3GFile(ReadExcelFile):
                          "nodeb text,"
                          "rnc text,"
                          "fac text,"
-                         "PRIMARY KEY (name))")
+                         "PRIMARY KEY (name))"
+                         )
 
         for info in info_lst:
             #print info
@@ -286,13 +295,13 @@ class Read4GFile(ReadExcelFile):
 
             #print row
 
-            cell_name = row[2]
+            name = row[2]
             base_name = row[1]
             base_id = int(row[3])
             cell_id = int(row[4])
             tac = int(row[5])
             pci = int(row[6])
-            info_lst.append([cell_name, base_name, base_id, cell_id, tac, pci])
+            info_lst.append([name, base_name, base_id, cell_id, tac, pci])
 
             if type(row[0]) is not float:
                 date = Utils.strdate_to_postgredate(row[0])
@@ -301,7 +310,11 @@ class Read4GFile(ReadExcelFile):
             updata = row[8]
             downdata = row[9]
             sumdata = row[7]
-            busi_lst.append([cell_name, date, updata, downdata, sumdata])
+            item = [name, date, updata, downdata, sumdata]
+            for i in range(len(item)):
+                if item[i]=="":
+                    item[i] = 0
+            busi_lst.append(item)
 
         return [info_lst, busi_lst]
 
@@ -311,25 +324,25 @@ class Read4GFile(ReadExcelFile):
         dbcursor = dbconn.cursor()
 
         dbcursor.execute("create TEMPORARY table tmp_info_4g("
-                         "cell_name text NOT NULL,"
+                         "name text NOT NULL,"
                          "base_name text,"
                          "base_id text,"
                          "cell_id text,"
                          "tac text,"
                          "pci text,"
-                         "PRIMARY KEY (cell_name))")
+                         "PRIMARY KEY (name))")
 
         for info in info_lst:
             # print info
             try:
-                dbcursor.execute("insert into tmp_info_4g (cell_name, base_name, base_id, cell_id, tac, pci)\
+                dbcursor.execute("insert into tmp_info_4g (name, base_name, base_id, cell_id, tac, pci)\
                                     values(%s, %s, %s, %s, %s, %s)", info)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e
 
-        dbcursor.execute("select cell_name from tmp_info_4g "
+        dbcursor.execute("select name from tmp_info_4g "
                          "except "
-                         "select cell_name from cell_info_4g")
+                         "select name from cell_info_4g")
         names = dbcursor.fetchall()
         names_new = [name[0] for name in names]
 
@@ -340,7 +353,7 @@ class Read4GFile(ReadExcelFile):
             print name.decode("utf-8")
             dbcursor.execute("insert into cell_info_4g "
                              "select * from tmp_info_4g "
-                             "where cell_name = '%s'" % name)
+                             "where name = '%s'" % name)
 
         dbconn.commit()
         dbconn.close()
@@ -353,7 +366,7 @@ class Read4GFile(ReadExcelFile):
         for busi in busi_lst:
             # print busi
             try:
-                dbcursor.execute("insert into cell_busi_4g (cell_name, date, updata, downdata, alldata)\
+                dbcursor.execute("insert into cell_busi_4g (name, date, updata, downdata, alldata)\
                                     values(%s, %s, %s, %s, %s)", busi)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e  # 如果出错则存储整个表的事务被回滚，进一步的处理有待研究
@@ -366,26 +379,39 @@ class Read4GFile(ReadExcelFile):
         self.save_info_not_firsttime(info_lst)
         self.save_busi(busi_lst)
 
+def import_excel(root, name):
+    if re.search(filename_key_2g, name) != None:
+        print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+        try:
+            rf = Read2GFile(os.path.join(root, name))
+            rf.read_to_db()
+        except:
+            pass
+    elif re.search(filename_key_3g, name) != None:
+        print "3G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+        try:
+            rf = Read3GFile(os.path.join(root, name))
+            rf.read_to_db()
+        except:
+            pass
+    elif re.search(filename_key_4g, name) != None:
+        print "4G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+        try:
+            rf = Read4GFile(os.path.join(root, name))
+            rf.read_to_db()
+        except:
+            pass
+    else:
+        pass
+
 def multi_import(dataroot, year = '2017'):
     '''循环遍历文件名并处理'''
+    print dataroot
     for root, dirs, files in os.walk(dataroot):
         for name in files:
             #name = name.decode("GBK").encode("utf-8")
             if re.search(year, name) and (name.endswith(".xls") or name.endswith(".xlsx")):
-                if re.search(filename_key_2g, name) != None:
-                    print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
-                    rf = Read2GFile(os.path.join(root, name))
-                    rf.read_to_db()
-                elif re.search(filename_key_3g, name) != None:
-                    print "3G：", os.path.join(root, name).decode("GBK").encode("utf-8")
-                    rf = Read3GFile(os.path.join(root, name))
-                    rf.read_to_db()
-                elif re.search(filename_key_4g, name) != None:
-                    print "4G：", os.path.join(root, name).decode("GBK").encode("utf-8")
-                    rf = Read4GFile(os.path.join(root, name))
-                    rf.read_to_db()
-                else:
-                    pass
+                import_excel(root, name)
 
 def multi_import_by_date(dataroot, date):
     '''date格式默认为datetime.date'''
@@ -396,33 +422,35 @@ def multi_import_by_date(dataroot, date):
             if re.search(date_str, name):
                 #name = name.decode("GBK").encode("utf-8")
                 if name.endswith(".xls") or name.endswith(".xlsx"):
-                    if re.search(filename_key_2g, name) != None:
-                        print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
-                        rf = Read2GFile(os.path.join(root, name))
-                        rf.read_to_db()
-                    elif re.search(filename_key_3g, name) != None:
-                        print "3G：", os.path.join(root, name).decode("GBK").encode("utf-8")
-                        rf = Read3GFile(os.path.join(root, name))
-                        rf.read_to_db()
-                    elif re.search(filename_key_4g, name) != None:
-                        print "4G：", os.path.join(root, name).decode("GBK").encode("utf-8")
-                        rf = Read4GFile(os.path.join(root, name))
-                        rf.read_to_db()
-                    else:
-                        pass
+                    import_excel(root, name)
+                    # if re.search(filename_key_2g, name) != None:
+                    #     print "2G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                    #     rf = Read2GFile(os.path.join(root, name))
+                    #     rf.read_to_db()
+                    # elif re.search(filename_key_3g, name) != None:
+                    #     print "3G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                    #     rf = Read3GFile(os.path.join(root, name))
+                    #     rf.read_to_db()
+                    # elif re.search(filename_key_4g, name) != None:
+                    #     print "4G：", os.path.join(root, name).decode("GBK").encode("utf-8")
+                    #     rf = Read4GFile(os.path.join(root, name))
+                    #     rf.read_to_db()
+                    # else:
+                    #     pass
 
 def multi_import_during_date(dataroot, begin_date, end_date):
     '''date格式默认为datetime.date'''
     #遍历begin_date和end_date之间的所有date
     date = begin_date
     while date <= end_date:
-        #print date
+        print date
         multi_import_by_date(dataroot, date)
         date = date + datetime.timedelta(days=1)
 
+
 def test():
     # rf = Read2GFile("E:\projects\excel2DB\data\G网监控常用指标-20170101.xlsx".decode("utf-8").encode("GBK"))
-    rf = Read3GFile("E:\projects\excel2DB\data\W网监控常用指标-20170310.xlsx".decode("utf-8").encode("GBK"))
+    rf = Read3GFile(r"F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份\2017\W网监控常用指标-20170114.xlsx".decode("utf-8").encode("GBK"))
     rf.read_to_db()
 
 def testlte():
@@ -435,6 +463,5 @@ def testgsm():
     rf.read_to_db()
 
 if __name__ == "__main__":
-    #multi_import("E:\projects\excel2DB\data")
-
-    multi_import_during_date("E:\projects\excel2DB\data", datetime.date(2017, 5, 1), datetime.date(2017, 5, 5))
+    multi_import("F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份")
+    #multi_import_during_date("dataroot",datetime.date(2017,3,1), datetime.date(2017,4,30))
