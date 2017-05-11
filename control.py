@@ -4,6 +4,7 @@
 import os.path
 import csv
 from openpyxl import Workbook
+import datetime
 
 from models import *
 
@@ -32,6 +33,7 @@ class control(object):
 
     @staticmethod
     def getNobusiCell_prototype():
+        """查询零业务小区的函数原型"""
         sql_get_ordered_table = "create temp table tem_cell_busi_2g as " \
                                 "select name, date, erl, alldata " \
                                 "from cell_busi_2g " \
@@ -53,6 +55,7 @@ class control(object):
 
     @staticmethod
     def getNobusiCell(days, threshold, nettype, busitype):
+        """查询零业务小区，每次都生成临时表，效率较低"""
         lst_type = ['2g', '3g', '4g']
         lst_busitype = ['erl', 'data']
         if nettype not in lst_type:
@@ -131,6 +134,128 @@ class control(object):
         return result
 
     @staticmethod
+    def get_lagged_table(days, nettype):
+        """利用postgreSQL的lag()函数，生成一张用户查询零业务小区的前置表"""
+        str_sql = "create temp table tem_lagged_cell_busi_" + nettype + " as select *"
+        for i in range(1, days):
+            str_sql += ", lag(name," + str(i) + ") over(order by name)name_" + str(i)
+        for i in range(1, days):
+            str_sql += ", lag(erl," + str(i) + ") over(order by name)erl_" + str(i)
+        for i in range(1, days):
+            str_sql += ", lag(alldata," + str(i) + ") over(order by name)alldata_" + str(i)
+        str_sql += " from tem_cell_busi_" + nettype + " order by name, date;"
+        return str_sql
+
+    @staticmethod
+    def get_zero_erl_cell(days, threshold, nettype):
+        str_sql = "select name,min(date) from tem_lagged_cell_busi_" + nettype + " where"
+        for i in range(1, days):
+            str_sql += " name=name_" + str(i) + " and "
+        if threshold == 0:
+            str_sql += "erl=0 and "
+            for i in range(1, days):
+                str_sql += "erl_" + str(i) + "=0 and "
+        else:
+            str_sql += "erl<" + str(threshold) + " and "
+            for i in range(1, days):
+                str_sql += "erl_" + str(i) + "<" + str(threshold) + " and "
+        str_sql += "true group by name order by name;"
+        return str_sql
+
+    @staticmethod
+    def get_zero_data_cell(days, threshold, nettype):
+        str_sql = "select name,min(date) from tem_lagged_cell_busi_" + nettype + " where"
+        for i in range(1, days):
+            str_sql += " name=name_" + str(i) + " and "
+        if threshold == 0:
+            str_sql += "alldata=0 and "
+            for i in range(1, days):
+                str_sql += "alldata_" + str(i) + "=0 and "
+        else:
+            str_sql += "alldata<" + str(threshold) + " and "
+            for i in range(1, days):
+                str_sql += "alldata_" + str(i) + "<" + str(threshold) + " and "
+        str_sql += "true group by name order by name;"
+        return str_sql
+
+    @staticmethod
+    def get_zero_data_and_erl_cell(days, threshold, nettype):
+        str_sql = "select name,min(date) from tem_lagged_cell_busi_" + nettype + " where"
+        for i in range(1, days):
+            str_sql += " name=name_" + str(i) + " and "
+        if threshold == 0:
+            str_sql += "alldata=0 and "
+            for i in range(1, days):
+                str_sql += "alldata_" + str(i) + "=0 and "
+
+            str_sql += "and erl=0 and "
+            for i in range(1, days):
+                str_sql += "erl_" + str(i) + "=0 and "
+        else:
+            str_sql += "alldata<" + str(threshold) + " and "
+            for i in range(1, days):
+                str_sql += "alldata_" + str(i) + "<" + str(threshold) + " and "
+
+            str_sql += "and erl<" + str(threshold) + " and "
+            for i in range(1, days):
+                str_sql += "erl_" + str(i) + "<" + str(threshold) + " and "
+        str_sql += "true group by name order by name;"
+        return str_sql
+
+    @staticmethod
+    def prepare_no_busi_cell(days=7):
+        """生成查询零业务小区的临时前置表，服务器每天定时生成最近7天的，并删除前一天生成的临时表"""
+        lst_type = ['2g', '3g', '4g']
+
+        today = datetime.datetime.now().date()
+        begindate = today - datetime.timedelta(days=2+days)
+        enddate = today - datetime.timedelta(days=2)
+        for nettype in lst_type:
+            # 删除前一天生成的临时表
+            try:
+                execute_sql("drop table tem_cell_busi_" + nettype)
+                execute_sql("drop table tem_lagged_cell_busi_" + nettype)
+            except:
+                pass
+
+            sql_get_ordered_table = "create temp table tem_cell_busi_" \
+                                    + nettype \
+                                    + " as select name, date, erl, alldata "\
+                                      "from cell_busi_" + nettype + " " \
+                                      "where date between '" + begindate + "' and '" + enddate + "' "\
+                                      "order by name, date;"
+            print sql_get_ordered_table
+            execute_sql(sql_get_ordered_table)
+
+            sql_get_lagged_table = control.get_lagged_table(days, nettype)
+            print sql_get_lagged_table
+            try:
+                execute_sql(sql_get_lagged_table)
+            except:
+                execute_sql("drop table tem_cell_busi_" + nettype)
+                raise ("SQL error!")
+
+    @staticmethod
+    def quick_zero_busi_cell(busitype, days, threshold, nettype):
+
+        if busitype == 'erl':
+            sql_get_zero_busi_cell = control.get_zero_erl_cell(days, threshold, nettype)
+        elif busitype == 'data':
+            sql_get_zero_busi_cell = control.get_zero_data_cell(days, threshold, nettype)
+        elif busitype == 'both':
+            sql_get_zero_busi_cell = control.get_zero_data_and_erl_cell(days, threshold, nettype)
+        else:
+            raise("busi type error")
+        print sql_get_zero_busi_cell
+        try:
+            result = execute_sql(sql_get_zero_busi_cell).fetchall()
+        except:
+            raise ("zero busi cell SQL error")
+
+        return result
+
+
+    @staticmethod
     def write2Excel(lst_result, filepath):
         wb = Workbook()
         ws = wb.active
@@ -157,6 +282,4 @@ def test(filepath):
 if __name__ == "__main__":
     #test(r"E:\developtools\PyCharm 2016.3\projects\InformationSystem\files\test.csv")
     lst_result = control.getNobusiCell(3, 0.01, '2g', 'data')
-    print len(lst_result)
-    for result in lst_result:
-        print result
+    print datetime.datetime.now().date()
