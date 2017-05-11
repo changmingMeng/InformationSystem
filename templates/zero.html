@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Information System: zone query</title>
+    <script type="text/javascript" src="../static/js/jquery-3.2.0.js"></script>
+    <script type="text/javascript" src="../static/js/myjs.js"></script>
+    <script type="text/javascript" src="../static/js/jquery.datetimepicker.full.js"></script>
+    <script type="text/javascript" src="../static/JSAjaxFileUploader-master/JQuery.JSAjaxFileUploader.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/css/jquery.datetimepicker.css"/ >
+    <link rel="stylesheet" type="text/css" href="../static/css/semantic.css" media="screen" title="no title" charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="../static/JSAjaxFileUploader-master/JQuery.JSAjaxFileUploader.css"  />
+  </head>
+  <body>
+    <div class="ui fixed inverted menu">
+        <a href="manage" class="item">小区查询</a>
+        <a href="zone" class="item">区域查询</a>
+        <a href="zero" class="item">零业务查询</a>
+        <a href="#" class="item">Other</a>
+    </div>
+    <div class="ui vertical basic segment">
+        <div class="ui image">
+            <img src="../static/images/banner.jpg" alt="" />
+        </div>
+    </div>
+
+
+    <div id="search" class="ui vertical basic segment">
+      <div class="ui grid">
+
+        <div class="three wide clumn"></div>
+
+        <div class="ten wide column">
+          <h2 class="ui header">
+            <i class="icon star"></i>
+            零业务查询
+          </h2>
+
+          <div class="ui form">
+            <div class="four fields">
+
+              <div class="field">
+                <label>小区分类</label>
+                <select id="celltype" class="ui dropdown">
+                  <option value=""></option>
+                  <option value="2g">GSM</option>
+                  <option value="3g">WCDMA</option>
+                  <option value="4g">LTE</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>起始日期</label>
+                <input type="text" value="" id="begin_date" placeholder="选择日期"/>
+              </div>
+
+              <div class="field">
+                <label>结束日期</label>
+                <input type="text" value="" id="end_date" placeholder="选择日期"/>
+              </div>
+
+              <div class="two field">
+                <label>连续天数</label>
+                <input id="days" type="text" placeholder="连续零业务天数">
+              </div>
+
+              <div class="two field">
+                <label>阈值</label>
+                <input id="threshold" type="text" placeholder="零业务阈值">
+              </div>
+
+              <div class="field">
+                <label>业务分类</label>
+                <select id="busitype" class="ui dropdown">
+                  <option value=""></option>
+                  <option value="both">流量(M)和语音(erl)</option>
+                  <option value="erl">语音(erl)</option>
+                  <option value="data">流量(M)</option>
+                </select>
+              </div>
+
+            </div>
+            <input class="ui button" type="button" onclick="Query();" value="查询" />
+            <label class="" id="errorinfo"></label>
+          </div>
+
+        </div>
+
+        <div class="three wide clumn"></div>
+
+      </div>
+    </div>
+
+
+    <table id="table" class="ui celled table">
+      <thead>
+        <tr>
+          <th>小区名称</th>
+          <th>小区分类</th>
+          <th>截止日期</th>
+        </tr>
+      </thead>
+      <tbody id="table_body">
+
+      </tbody>
+      <tfoot id="table_foot">
+        <tr>
+          <th colspan="6">
+            <div id="foot_pages" class="ui right floated pagination menu">
+              <a class="icon item" onclick="page_click('pre')" id="pre_button">
+                <i class="left chevron icon"></i>
+              </a>
+
+              <a class="icon item" onclick="page_click('next')" id="next_button">
+                <i class="right chevron icon"></i>
+              </a>
+            </div>
+
+            <button class="ui button" id="backbutton" >返回</button>
+            <button class="ui button" id="downloadbutton" onclick="" >下载</button>
+          </th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- <input type="button" href="download?filename=zero_cell.xlsx" value="Download" /> -->
+
+    <div class="ui vertical very padded inverted segment">
+        <div class="ui grid">
+            <div class="four wide column">
+                <div class="ui vertical inverted text menu">
+                    <div class="item">
+                        <h3 class="ui inverted header">网优中心</h3>
+                    </div>
+
+                    <div class="item">
+                        地址 : 1号楼201
+                    </div>
+
+                    <div class="item">
+                        Tel : 010-66666
+                    </div>
+
+                    <div class="item">
+                        Fax : 010-66666
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  <script type="text/javascript">
+    //$('#target-div1').JSAjaxFileUploader({uploadUrl:'upload'});
+
+    $(document).ready(function(){
+      $("table").hide()
+
+      $("#backbutton").click(function(){
+        $("#search").show()
+        $("#table").hide()
+      });
+    });
+
+    $.datetimepicker.setLocale('ch');
+    $('#begin_date').datetimepicker({
+      dayOfWeekStart : 1,
+      format:"Y-m-d",
+      timepicker:false
+      //lang:'ch',
+      //disabledDates:['1986/01/08','1986/01/09','1986/01/10'],
+      //startDate:	'/01/05'
+    });
+
+    $.datetimepicker.setLocale('ch');
+    $('#end_date').datetimepicker({
+      dayOfWeekStart : 1,
+      format:"Y-m-d",
+      timepicker:false
+      //lang:'ch',
+      //disabledDates:['1986/01/08','1986/01/09','1986/01/10'],
+      //startDate:	'/01/05'
+    });
+
+    $('#downloadbutton').click(function () {
+      var tt = new Date().getTime();
+      var url = 'download';
+      /**
+      * 使用form表单来发送请求
+      * 1.method属性用来设置请求的类型——post还是get
+      * 2.action属性用来设置请求路径。
+      *
+      */
+      var form=$("<form>");//定义一个form表单
+      form.attr("style","display:none");
+      form.attr("target","");
+      form.attr("method","get"); //请求类型
+      form.attr("action",url); //请求地址
+      $("body").append(form);//将表单放置在web中
+　　   /**
+      * input标签主要用来传递请求所需的参数：
+      *
+      * 1.name属性是传递请求所需的参数名.
+      * 2.value属性是传递请求所需的参数值.
+      *
+      * 3.当为get类型时，请求所需的参数用input标签来传递，直接写在URL后面是无效的。
+      * 4.当为post类型时，queryString参数直接写在URL后面，formData参数则用input标签传递
+      * 有多少数据则使用多少input标签
+      *
+　　　 */
+      var input1=$("<input>");
+      input1.attr("type","hidden");
+      input1.attr("name","filename");
+      input1.attr("value","zero_cell.xlsx");
+      form.append(input1);
+
+      form.submit();//表单提交
+    })
+
+
+    function Query(){
+      $("#errorinfo").text("");
+      if(!isValidDate($("#begin_date").val(), $("#end_date").val())){
+        $("#errorinfo").text("请输入正确的时间");
+        alert("请输入正确的时间")
+        return;
+      }
+      //alert(fileObj)
+      //创建form对象
+      var form = new FormData();
+      form.append("begin_date", $("#begin_date").val());  //为后台发送数据
+      form.append("end_date", $("#end_date").val());
+      form.append("net_type", $("#celltype").val());
+      form.append("days", $("#days").val());
+      form.append("threshold", $("#threshold").val());
+      form.append("busitype", $("#busitype").val());
+      //alert($("#threshold").val())
+      var xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = function(e){
+        if(xhr.readyState == 4){
+          //和服务器的交互完成
+          if(xhr.status == 200){
+            //表示服务器响应代码是200，正确返回了数据
+            //纯文本数据的接受方法
+            var message = xhr.response;
+            //xml数据对应的dom对象的接受方法
+            //使用的前提，服务器设置contenttype为text/xml
+            $("#table_body").empty()
+            //alert(message)
+            var response = message.substr(1,message.length-2)
+            //alert(response)
+            var json = eval(response)
+            //alert(json[0])
+            var data = json[1]
+            //alert("json:"+json+"data:"+data)
+            //alert(new Date($("#begin_date").val()))
+            if ($.isEmptyObject(data)){
+              $("#errorinfo").text("文件格式错误或内容错误");
+              alert("文件格式错误或内容错误")
+            }
+
+            else{
+              $("#errorinfo").text("");
+              page_number = 0;
+
+              for(var i in data){
+                var td_name = $("<td></td>").text(data[i].name)
+                var td_type = $("<td></td>").text(data[i].nettype)
+                var td_date = $("<td></td>").text(data[i].date)
+                //alert(data[i].name, data[i].date, data[i].nettype)
+                //var tr = "<tr id='row"+i+"></tr>"
+                var tr = $("<tr></tr>").addClass("row"+i)
+                tr.append(td_name,td_type,td_date)
+                $("#table_body").append(tr)
+
+                if (i%10 == 0){
+                  page_number++;
+                  //var page = '<a id="page_button" class="item" onclick="page_click('+page_number+')">'+(page_number)+'<a>'
+                  var page = $('<a id="page_button" class="item" onclick="page_click('+page_number+')">'+(page_number)+'<a>')
+                  $("#next_button").before(page)
+                }
+
+                if (i==49) break;
+              }
+
+              var page_index = $("<div></div>").text(1).addClass("count").hide();
+              $("#foot_pages").append(page_index)
+
+              page_click(1)
+            }
+          }
+        }
+        $("#search").hide()
+        $("#table").show()
+      };
+      xhr.open("post", 'zero', true);
+      xhr.send(form); //发送form表单
+    }
+
+    function isValidDate(begin_date, end_date){
+      var d1 = new Date(begin_date.replace(/\-/g, "\/"));
+      var d2 = new Date(end_date.replace(/\-/g, "\/"));
+
+      if(begin_date!=""&&end_date!=""&&d1<=d2)
+        return true;
+      return false;
+    }
+
+    function UploadFileDate(){
+      //获取文件对象
+      var fileObj = document.getElementById("attachmentName").files[0];
+      $.post("upload",
+      {
+        begin_date:$("#begin_date").val(),
+        end_date:$("#end_date").val(),
+        //file:fileObj
+      },
+      function(data, status){
+        alert("Data: " + data + "\nStatus: " + status);
+      })
+    }
+
+    var fileExtentionRange = '.csv .xls .xlsx';
+        var MAX_SIZE = 30; // MB
+
+        $(document).on('change', '.btn-file :file', function() {
+            var input = $(this);
+
+            if (navigator.appVersion.indexOf("MSIE") != -1) { // IE
+                var label = input.val();
+
+                input.trigger('fileselect', [ 1, label, 0 ]);
+            } else {
+                var label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+                var numFiles = input.get(0).files ? input.get(0).files.length : 1;
+                var size = input.get(0).files[0].size;
+
+                input.trigger('fileselect', [ numFiles, label, size ]);
+            }
+        });
+
+        $('.btn-file :file').on('fileselect', function(event, numFiles, label, size) {
+            $('#attachmentName').attr('name', 'attachmentName'); // allow upload.
+
+            var postfix = label.substr(label.lastIndexOf('.'));
+            if (fileExtentionRange.indexOf(postfix.toLowerCase()) > -1) {
+                if (size > 1024 * 1024 * MAX_SIZE ) {
+                	alert('max size：<strong>' + MAX_SIZE + '</strong> MB.');
+
+                    $('#attachmentName').removeAttr('name'); // cancel upload file.
+                } else {
+                    $('#_attachmentName').val(label);
+                }
+            } else {
+                alert('file type：<br/> <strong>' + fileExtentionRange + '</strong>');
+
+                $('#attachmentName').removeAttr('name'); // cancel upload file.
+            }
+        });
+  </script>
+  </body>
+</html>
