@@ -16,11 +16,11 @@ from utils import Utils
 import excel2DB
 
 
-# dataroots = [r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
+dataroots = [#r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
 #              r'F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份',
-#              r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\爱立信\LTE小区级日数据流量及忙时KPI指标备份',
-#              r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份']
-dataroots = [r'E:\projects\excel2DB\data']
+             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\爱立信\LTE小区级日数据流量及忙时KPI指标备份',
+             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份']
+#dataroots = [r'E:\projects\excel2DB\data']
 
 # class MainHandler(tornado.web.RequestHandler):
 #   """主索引的处理"""
@@ -311,11 +311,11 @@ def read_data_to_db():
 
 
 def general_zero_temp_table():
-    print datetime.datetime.now(), "read_data_to_db"
+    print datetime.datetime.now(), "general_zero_temp_table"
     control.control.prepare_no_busi_cell()
 
 def check_cell_busi():
-    print datetime.datetime.now(), "read_data_to_db"
+    print datetime.datetime.now(), "check_cell_busi"
 
 def scheduled_tasks():
     now_time = time.localtime(time.time()).tm_hour
