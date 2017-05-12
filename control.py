@@ -222,7 +222,7 @@ class control(object):
                                     + nettype \
                                     + " as select name, date, erl, alldata "\
                                       "from cell_busi_" + nettype + " " \
-                                      "where date between '" + begindate + "' and '" + enddate + "' "\
+                                      "where date between '" + str(begindate) + "' and '" + str(enddate) + "' "\
                                       "order by name, date;"
             print sql_get_ordered_table
             execute_sql(sql_get_ordered_table)
