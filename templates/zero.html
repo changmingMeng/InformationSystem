@@ -155,8 +155,9 @@
       $("table").hide()
 
       $("#backbutton").click(function(){
-        $("#search").show()
-        $("#table").hide()
+        //$("#search").show()
+        //$("#table").hide()
+        location.href = "zero"
       });
     });
 
@@ -206,10 +207,12 @@
       * 有多少数据则使用多少input标签
       *
 　　　 */
+
+      var download_file_name=$(".downloadfilename").text()
       var input1=$("<input>");
       input1.attr("type","hidden");
       input1.attr("name","filename");
-      input1.attr("value","zero_cell.xlsx");
+      input1.attr("value",download_file_name);
       form.append(input1);
 
       form.submit();//表单提交
@@ -249,6 +252,10 @@
             //alert(response)
             var json = eval(response)
             //alert(json[0])
+            // 文件名插入downloadbutton的一个text子节点，并隐藏该节点
+            var download_filename = $("<div></div>").text(json[0]).addClass("downloadfilename").hide();
+            $("#downloadbutton").append(download_filename)
+
             var data = json[1]
             //alert("json:"+json+"data:"+data)
             //alert(new Date($("#begin_date").val()))
