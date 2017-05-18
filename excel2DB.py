@@ -310,7 +310,8 @@ class Read4GFile(ReadExcelFile):
             updata = row[8]
             downdata = row[9]
             sumdata = row[7]
-            item = [name, date, updata, downdata, sumdata]
+            erl = 0
+            item = [name, date, erl, updata, downdata, sumdata]
             for i in range(len(item)):
                 if item[i]=="":
                     item[i] = 0
@@ -366,8 +367,8 @@ class Read4GFile(ReadExcelFile):
         for busi in busi_lst:
             # print busi
             try:
-                dbcursor.execute("insert into cell_busi_4g (name, date, updata, downdata, alldata)\
-                                    values(%s, %s, %s, %s, %s)", busi)
+                dbcursor.execute("insert into cell_busi_4g (name, date, erl, updata, downdata, alldata)\
+                                    values(%s, %s, %s, %s, %s, %s)", busi)
             except (psycopg2.IntegrityError, psycopg2.InternalError) as e:
                 print e  # 如果出错则存储整个表的事务被回滚，进一步的处理有待研究
                 #
@@ -454,7 +455,7 @@ def test():
     rf.read_to_db()
 
 def testlte():
-    rf = Read4GFile("E:\projects\excel2DB\data\LTE小区级日数据流量及忙时KPI指标备份_20170101.xlsx".decode("utf-8").encode("GBK"))
+    rf = Read4GFile(r"F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份\2017\5月\LTE小区级日数据流量及忙时KPI指标_20170508.xlsx".decode("utf-8").encode("GBK"))
     rf.read_to_db()
 
 def testgsm():
@@ -463,5 +464,6 @@ def testgsm():
     rf.read_to_db()
 
 if __name__ == "__main__":
-    multi_import("F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份")
+    #multi_import("F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份")
     #multi_import_during_date("dataroot",datetime.date(2017,3,1), datetime.date(2017,4,30))
+    testlte()

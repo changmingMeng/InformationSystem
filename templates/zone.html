@@ -50,6 +50,16 @@
               </div>
 
               <div class="field">
+                <label>小区分类</label>
+                <select id="celltype" class="ui dropdown">
+                  <!--<option value=""></option>-->
+                  <option value="2g">GSM</option>
+                  <option value="3g">WCDMA</option>
+                  <option value="4g">LTE</option>
+                </select>
+              </div>
+
+              <div class="field">
                 <label>起始日期</label>
                 <input type="text" value="" id="begin_date" placeholder="选择日期"/>
               </div>
@@ -171,6 +181,7 @@
       var form = new FormData();
       form.append("begin_date", $("#begin_date").val());  //为后台发送数据
       form.append("end_date", $("#end_date").val());
+      form.append("nettype", $("#celltype").val());
       form.append("file", fileObj);
       var xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function(e){

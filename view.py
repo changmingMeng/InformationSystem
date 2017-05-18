@@ -16,10 +16,11 @@ from utils import Utils
 import excel2DB
 
 
-dataroots = [#r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
-#              r'F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份',
+dataroots = [r'F:\36服务器搬迁资料\02-外部共享\21-2014年GSM日常作业计划\话务量&流量指标月备份',
+             r'F:\36服务器搬迁资料\02-外部共享\23-2014年WCDMA日常作业计划\话务量&流量指标月备份',
              r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\爱立信\LTE小区级日数据流量及忙时KPI指标备份',
-             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份']
+             r'F:\36服务器搬迁资料\02-外部共享\22-2014年LTE日常作业计划\华为\LTE小区级日数据流量及忙时KPI指标备份'
+            ]
 #dataroots = [r'E:\projects\excel2DB\data']
 
 # class MainHandler(tornado.web.RequestHandler):
@@ -74,24 +75,69 @@ class SelectHandler(tornado.web.RequestHandler):
         print likename
 
         if date.replace(" ","") == "":
-            sql = CellBusi3G.select()\
+            if nettype == '3g':
+                sql = CellBusi3G.select()\
                 .where(CellBusi3G.name % likename) \
                 .order_by(CellBusi3G.name, CellBusi3G.date) \
                 .limit(50)
-        else:
-            if end_date.replace(" ","") == "":
-                sql = CellBusi3G.select()\
-                    .where((CellBusi3G.name % likename)
-                           & (CellBusi3G.date == Utils.strdate_to_date(date))) \
-                    .order_by(CellBusi3G.name, CellBusi3G.date) \
+            elif nettype == '2g':
+                sql = CellBusi2G.select()\
+                .where(CellBusi2G.name % likename) \
+                .order_by(CellBusi2G.name, CellBusi2G.date) \
+                .limit(50)
+            elif nettype == '4g':
+                sql = CellBusi4G.select() \
+                    .where(CellBusi4G.name % likename) \
+                    .order_by(CellBusi4G.name, CellBusi4G.date) \
                     .limit(50)
             else:
-                sql = CellBusi3G.select() \
-                    .where((CellBusi3G.name % likename)
+                raise ("net type error")
+        else:
+            if end_date.replace(" ","") == "":
+                if nettype == '3g':
+                    sql = CellBusi3G.select()\
+                        .where((CellBusi3G.name % likename)
+                               & (CellBusi3G.date == Utils.strdate_to_date(date))) \
+                        .order_by(CellBusi3G.name, CellBusi3G.date) \
+                        .limit(50)
+                elif nettype == '2g':
+                    sql = CellBusi2G.select() \
+                        .where((CellBusi2G.name % likename)
+                               & (CellBusi2G.date == Utils.strdate_to_date(date))) \
+                        .order_by(CellBusi2G.name, CellBusi2G.date) \
+                        .limit(50)
+                elif nettype == '4g':
+                    sql = CellBusi4G.select() \
+                        .where((CellBusi4G.name % likename)
+                               & (CellBusi4G.date == Utils.strdate_to_date(date))) \
+                        .order_by(CellBusi4G.name, CellBusi4G.date) \
+                        .limit(50)
+                else:
+                    raise ("net type error")
+            else:
+                if nettype == '3g':
+                    sql = CellBusi3G.select() \
+                        .where((CellBusi3G.name % likename)
                            & (CellBusi3G.date >= Utils.strdate_to_date(date))
                            & (CellBusi3G.date <= Utils.strdate_to_date(end_date))) \
-                    .order_by(CellBusi3G.name, CellBusi3G.date) \
-                    .limit(50)
+                        .order_by(CellBusi3G.name, CellBusi3G.date) \
+                        .limit(50)
+                elif nettype == '2g':
+                    sql = CellBusi2G.select() \
+                        .where((CellBusi2G.name % likename)
+                               & (CellBusi2G.date >= Utils.strdate_to_date(date))
+                               & (CellBusi2G.date <= Utils.strdate_to_date(end_date))) \
+                        .order_by(CellBusi2G.name, CellBusi2G.date) \
+                        .limit(50)
+                elif nettype == '4g':
+                    sql = CellBusi4G.select() \
+                        .where((CellBusi4G.name % likename)
+                               & (CellBusi4G.date >= Utils.strdate_to_date(date))
+                               & (CellBusi4G.date <= Utils.strdate_to_date(end_date))) \
+                        .order_by(CellBusi4G.name, CellBusi4G.date) \
+                        .limit(50)
+                else:
+                    raise ('net type error')
 
 
         response = "["
@@ -155,7 +201,8 @@ class UploadHandler(tornado.web.RequestHandler):
 
         begindate = self.get_argument("begin_date")
         enddate = self.get_argument("end_date")
-        print begindate, enddate
+        nettype = self.get_argument("nettype")
+        print begindate, enddate, nettype
 
 
         upload_path = os.path.join(os.path.dirname(__file__), 'files')  # 文件的暂存路径
@@ -169,7 +216,7 @@ class UploadHandler(tornado.web.RequestHandler):
                 up.write(meta['body'])
         print begindate, enddate, filepath
 
-        sql = control.control.getZoneInfo(begindate, enddate, filepath)
+        sql = control.control.getZoneInfo(begindate, enddate, nettype, filepath)
 
         response = "["
         if sql is not None:
@@ -232,8 +279,8 @@ class ZeroBusiHandler(tornado.web.RequestHandler):
         busitype = self.get_argument("busitype")
         print begindate, enddate, nettype, days, threshold, busitype
         #调用control库中的方法操作数据库获得零业务小区
-        #result = control.control.getNobusiCell(int(days), float(threshold), nettype, busitype)
-        result = control.control.quick_zero_busi_cell(busitype,days,threshold,nettype)
+        result = control.control.getNobusiCell(int(days), float(threshold), nettype, busitype)
+        #result = control.control.quick_zero_busi_cell(busitype,days,threshold,nettype)
         #在服务器本地生成文件
         download_path = os.path.join(os.path.dirname(__file__), 'downFiles')
         filename = str(time.time()).replace(".","")+'zero_cell.xlsx'
@@ -305,14 +352,14 @@ def make_app():
 def read_data_to_db():
     print datetime.datetime.now(), "read_data_to_db"
 
-    date = datetime.datetime.now().date()
+    date = datetime.datetime.now().date() - datetime.timedelta(days=2)
     for dataroot in dataroots:
         excel2DB.multi_import_by_date(dataroot.decode('utf-8').encode('GBK'), date)
 
 
 def general_zero_temp_table():
     print datetime.datetime.now(), "general_zero_temp_table"
-    control.control.prepare_no_busi_cell()
+    #control.control.prepare_no_busi_cell()
 
 def check_cell_busi():
     print datetime.datetime.now(), "check_cell_busi"
